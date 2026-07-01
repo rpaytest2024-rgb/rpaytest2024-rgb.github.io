@@ -1450,9 +1450,15 @@
 		<div class="app">
 			<!-- 头部 -->
 			<div class="header">
-				<h1>🧪 <span>TestCase-V1.0</span></h1>
+				<h1>
+					🧪 <span>TestCase-V1.0</span>
+					<a href="parten.html"
+						style="margin-left:24px; font-size:18px; color:#2b7a4b; text-decoration:none; font-weight:500; background:#e8f5ee; padding:4px 16px; border-radius:30px; display:inline-block;">
+						📋 Parten
+					</a>
+				</h1>
 				<p>测试用例生成器 · 截断优化 · 详情顺序调整 · Excel顶端对齐</p>
-				<div class="version">版本 V1.0</div>
+				<div class="version">版本 V1.1</div>
 			</div>
 
 			<!-- 输入卡片 -->
@@ -2619,7 +2625,7 @@
 					tableBody.querySelectorAll('.main-row').forEach(row => {
 						row.addEventListener('click', function(e) {
 							if (e.target.closest('.btn-action') || e.target.closest(
-								'input[type="checkbox"]')) return;
+									'input[type="checkbox"]')) return;
 							const index = this.dataset.index;
 							const detailRow = tableBody.querySelector(`.detail-row[data-index="${index}"]`);
 							if (detailRow) {
@@ -3423,14 +3429,14 @@
 					clearAllCases.addEventListener('click', clearAllCasesHandler);
 
 					document.querySelectorAll('.input-group input, .input-group textarea, .input-group select').forEach(
-					el => {
-						el.addEventListener('keydown', function(e) {
-							if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
-								e.preventDefault();
-								addRow();
-							}
+						el => {
+							el.addEventListener('keydown', function(e) {
+								if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+									e.preventDefault();
+									addRow();
+								}
+							});
 						});
-					});
 
 					// ---- 表格事件委托（一次性绑定） ----
 					// 操作按钮：编辑、删除、复制
