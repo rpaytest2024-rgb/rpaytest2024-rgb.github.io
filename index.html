@@ -857,7 +857,7 @@
 				width: 100%;
 				border-collapse: collapse;
 				font-size: 14px;
-				min-width: 800px;
+				min-width: 1000px;
 			}
 
 			thead {
@@ -880,7 +880,7 @@
 				min-width: 80px;
 			}
 
-			/* 操作列固定 */
+			/* 操作列固定及阴影 */
 			thead th:last-child,
 			tbody td:last-child {
 				position: sticky;
@@ -888,7 +888,7 @@
 				background: #ffffff;
 				z-index: 3;
 				border-left: 1px solid #e2e9f2;
-				box-shadow: -2px 0 6px rgba(0, 0, 0, 0.04);
+				box-shadow: -4px 0 12px rgba(0, 0, 0, 0.06);
 			}
 
 			thead th:last-child {
@@ -898,10 +898,26 @@
 
 			tbody td:last-child {
 				background: #ffffff;
+				min-width: 120px;
 			}
 
 			tbody tr:hover td:last-child {
 				background: #f8fbfe;
+			}
+
+			/* 步骤列加宽 */
+			tbody td:nth-last-child(3),
+			/* 操作列前两列是手顺和期待值（实际是倒数第3和倒数第2） */
+			tbody td:nth-last-child(2) {
+				min-width: 140px;
+				max-width: 240px;
+				white-space: normal;
+				word-break: break-word;
+			}
+
+			/* 手顺/期待值的表头对齐 */
+			thead th:not(:last-child):not(:first-child):not(:nth-child(2)) {
+				text-align: center;
 			}
 
 			thead th.group-header {
@@ -2395,7 +2411,7 @@
 					headerHtml += `<th rowspan="2">${fieldConfig.priority.label}</th>`;
 					headerHtml += `<th rowspan="2">${fieldConfig.remark.label}</th>`;
 					for (let i = 1; i <= maxSteps; i++) {
-						headerHtml += `<th colspan="2" class="group-header">${prefix} ${i}</th>`;
+						headerHtml += `<th colspan="2" class="group-header" style="text-align:center;">${prefix} ${i}</th>`;
 					}
 					headerHtml += `<th rowspan="2" style="width:110px;text-align:center;">操作</th>`;
 					headerHtml += `</tr><tr>`;
@@ -2405,7 +2421,8 @@
 						}
 					}
 					for (let i = 1; i <= maxSteps; i++) {
-						headerHtml += `<th>${actionLabel}</th><th>${expectedLabel}</th>`;
+						headerHtml +=
+							`<th style="text-align:center;">${actionLabel}</th><th style="text-align:center;">${expectedLabel}</th>`;
 					}
 					headerHtml += `</tr></thead>`;
 					tableHead.innerHTML = headerHtml;
