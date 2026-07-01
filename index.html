@@ -1488,15 +1488,16 @@
 				<div class="input-grid">
 					<!-- Title -->
 					<div class="input-group" data-field="title">
-						<label>
+						<label style="display:flex; align-items:center; width:100%; gap:6px;">
 							<span class="label-text">Title</span><span class="required">*</span>
 							<button class="edit-icon" data-target="title">✏️</button>
+							<span style="flex:1;"></span> <!-- 弹性撑开，让链接靠右 -->
+							<a href="parten.html" target="_blank"
+								style="font-size:16px; color:#2b7a4b; text-decoration:none; font-weight:500; background:#e8f5ee; padding:2px 14px; border-radius:30px; display:inline-block; border:1px solid #2b7a4b; white-space:nowrap;">
+								📋 Parten
+							</a>
 						</label>
 						<input type="text" id="title" placeholder="例如：测试用例标题" value="测试用例" />
-						<a href="parten.html" target="_blank"
-							style="margin-left:24px; font-size:18px; color:#2b7a4b; text-decoration:none; font-weight:500; background:#e8f5ee; padding:4px 16px; border-radius:30px; display:inline-block; border:1px solid #2b7a4b;">
-							📋 Parten
-						</a>
 					</div>
 					<!-- 前提条件 -->
 					<div class="input-group" data-field="precondition">
