@@ -2559,23 +2559,23 @@
 							bodyHtml += `<td>${escapeHtml(lv)}</td>`;
 						});
 						bodyHtml += `
-                        <td><strong>${escapeHtml(truncatedTitle)}</strong></td>
-                        <td style="white-space:pre-wrap;">${escapeHtml(truncatedPrecond)}</td>
-                        <td><span class="priority-badge" style="background:#eef3f9;padding:2px 10px;border-radius:12px;font-weight:600;font-size:13px;color:#1a2332;">${escapeHtml(truncatedPriority)}</span></td>
-                        <td style="white-space:pre-wrap;">${escapeHtml(truncatedRemark)}</td>`;
+				            <td><strong>${escapeHtml(truncatedTitle)}</strong></td>
+				            <td style="white-space:pre-wrap;">${escapeHtml(truncatedPrecond)}</td>
+				            <td><span class="priority-badge" style="background:#eef3f9;padding:2px 10px;border-radius:12px;font-weight:600;font-size:13px;color:#1a2332;">${escapeHtml(truncatedPriority)}</span></td>
+				            <td style="white-space:pre-wrap;">${escapeHtml(truncatedRemark)}</td>`;
 						for (let i = 0; i < maxSteps; i++) {
 							const stepText = (i < steps.length) ? truncate(steps[i].step, 20) : '';
 							const expectedText = (i < steps.length) ? truncate(steps[i].expected, 20) : '';
 							bodyHtml += `<td>${escapeHtml(stepText)}</td><td>${escapeHtml(expectedText)}</td>`;
 						}
 						bodyHtml += `
-						  <td style="text-align:center;white-space:nowrap;">
-						    <span class="drag-handle-row" draggable="true" title="拖拽排序" style="cursor:grab;margin-right:6px;">☰</span>
-						    <button class="btn-action copy" data-index="${index}" title="复制">📋</button>
-						    <button class="btn-action edit" data-index="${index}" title="编辑">✎</button>
-						    <button class="btn-action delete" data-index="${index}" title="删除">✕</button>
-						  </td>					
-                    </tr>`;
+				            <td style="text-align:center;white-space:nowrap;">
+				                <span class="drag-handle-row" draggable="true" title="拖拽排序" style="cursor:grab;margin-right:6px;">☰</span>
+				                <button class="btn-action copy" data-index="${index}" title="复制">📋</button>
+				                <button class="btn-action edit" data-index="${index}" title="编辑">✎</button>
+				                <button class="btn-action delete" data-index="${index}" title="删除">✕</button>
+				            </td>
+				        </tr>`;
 
 						// 详情行
 						bodyHtml += `<tr class="detail-row" data-index="${index}" style="display:none;">`;
@@ -2599,10 +2599,10 @@
 							bodyHtml += `<div class="step-detail"><strong>步骤详情：</strong>`;
 							steps.forEach((s, i) => {
 								bodyHtml += `<div style="margin-top:6px;border-top:1px dashed #e2e9f2;padding-top:4px;">
-                                <div><strong>Step ${i+1}</strong></div>
-                                <div><span style="font-weight:500;">${getStepActionLabel()}：</span><span style="white-space:pre-wrap;">${escapeHtml(s.step)}</span></div>
-                                <div><span style="font-weight:500;">${getStepExpectedLabel()}：</span><span style="white-space:pre-wrap;">${escapeHtml(s.expected)}</span></div>
-                            </div>`;
+				                    <div><strong>Step ${i+1}</strong></div>
+				                    <div><span style="font-weight:500;">${getStepActionLabel()}：</span><span style="white-space:pre-wrap;">${escapeHtml(s.step)}</span></div>
+				                    <div><span style="font-weight:500;">${getStepExpectedLabel()}：</span><span style="white-space:pre-wrap;">${escapeHtml(s.expected)}</span></div>
+				                </div>`;
 							});
 							bodyHtml += `</div>`;
 						} else {
@@ -2615,11 +2615,11 @@
 					});
 					tableBody.innerHTML = bodyHtml;
 
-					// 绑定主行点击展开/收起
+					// 绑定主行点击展开/收起（每次渲染重新绑定）
 					tableBody.querySelectorAll('.main-row').forEach(row => {
 						row.addEventListener('click', function(e) {
 							if (e.target.closest('.btn-action') || e.target.closest(
-									'input[type="checkbox"]')) return;
+								'input[type="checkbox"]')) return;
 							const index = this.dataset.index;
 							const detailRow = tableBody.querySelector(`.detail-row[data-index="${index}"]`);
 							if (detailRow) {
@@ -2627,111 +2627,6 @@
 								detailRow.style.display = isVisible ? 'none' : '';
 							}
 						});
-					});
-
-					// 绑定编辑和删除
-					tableBody.querySelectorAll('.btn-action.edit').forEach(btn => {
-						btn.addEventListener('click', function(e) {
-							e.stopPropagation();
-							const idx = parseInt(this.getAttribute('data-index'), 10);
-							if (!isNaN(idx)) openEditCase(idx);
-						});
-					});
-					tableBody.querySelectorAll('.btn-action.delete').forEach(btn => {
-						btn.addEventListener('click', function(e) {
-							e.stopPropagation();
-							const idx = parseInt(this.getAttribute('data-index'), 10);
-							if (!isNaN(idx)) deleteRow(idx);
-						});
-					});
-
-					// 在 init 中（只绑定一次）：
-					tableBody.addEventListener('dragstart', function(e) {
-						const row = e.target.closest('tr.main-row');
-						if (!row) return;
-						// 只允许拖拽手柄触发
-						if (!e.target.classList.contains('drag-handle-row')) {
-							e.preventDefault();
-							return;
-						}
-						const index = row.dataset.index;
-						e.dataTransfer.setData('text/plain', index);
-						e.dataTransfer.effectAllowed = 'move';
-						row.classList.add('dragging');
-					});
-
-					tableBody.addEventListener('dragover', function(e) {
-						e.preventDefault();
-						e.dataTransfer.dropEffect = 'move';
-						const targetRow = e.target.closest('tr.main-row');
-						if (targetRow) {
-							// 高亮效果
-							tableBody.querySelectorAll('tr.main-row').forEach(r => r.classList.remove('drag-over'));
-							targetRow.classList.add('drag-over');
-						}
-					});
-
-					tableBody.addEventListener('dragleave', function(e) {
-						const targetRow = e.target.closest('tr.main-row');
-						if (targetRow) {
-							targetRow.classList.remove('drag-over');
-						}
-					});
-
-					tableBody.addEventListener('drop', function(e) {
-						e.preventDefault();
-						const targetRow = e.target.closest('tr.main-row');
-						if (!targetRow) return;
-						targetRow.classList.remove('drag-over');
-
-						const dragIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
-						const dropIndex = parseInt(targetRow.dataset.index, 10);
-						if (isNaN(dragIndex) || isNaN(dropIndex) || dragIndex === dropIndex) return;
-
-						// 交换两个文档的 order 值
-						const dragRow = rows[dragIndex];
-						const dropRow = rows[dropIndex];
-						if (!dragRow || !dropRow) return;
-
-						const dragOrder = dragRow.order;
-						const dropOrder = dropRow.order;
-
-						// 批量更新两个文档的 order
-						const batch = db.batch();
-						const dragRef = db.collection('testcases').doc(dragRow.id);
-						const dropRef = db.collection('testcases').doc(dropRow.id);
-						batch.update(dragRef, {
-							order: dropOrder
-						});
-						batch.update(dropRef, {
-							order: dragOrder
-						});
-						batch.commit()
-							.then(() => {
-								showToast('顺序已更新', 'success');
-							})
-							.catch(err => {
-								showToast('排序失败：' + err.message, 'error');
-							});
-					});
-
-					tableBody.addEventListener('dragend', function(e) {
-						const row = e.target.closest('tr.main-row');
-						if (row) row.classList.remove('dragging');
-						tableBody.querySelectorAll('tr.main-row.drag-over').forEach(r => r.classList.remove(
-							'drag-over'));
-					});
-
-					// 在 init 中添加委托事件
-					tableBody.addEventListener('click', function(e) {
-						const copyBtn = e.target.closest('.copy');
-						if (copyBtn) {
-							const index = parseInt(copyBtn.dataset.index, 10);
-							if (!isNaN(index)) copyRow(index);
-							return;
-						}
-						// 原有的编辑、删除事件仍在各自按钮上已有绑定，但也可以统一委托
-						// 为了兼容，保留原来的单独绑定
 					});
 
 					// 更新全选状态
@@ -3550,6 +3445,92 @@
 						});
 					});
 
+					// ---- 表格事件委托（一次性绑定，避免重复监听） ----
+					// 操作按钮（编辑、删除、复制）
+					tableBody.addEventListener('click', function(e) {
+						const btn = e.target.closest('.btn-action');
+						if (!btn) return;
+						e.stopPropagation();
+						const index = parseInt(btn.dataset.index, 10);
+						if (isNaN(index)) return;
+						if (btn.classList.contains('edit')) {
+							openEditCase(index);
+						} else if (btn.classList.contains('delete')) {
+							deleteRow(index);
+						} else if (btn.classList.contains('copy')) {
+							copyRow(index);
+						}
+					});
+
+					// 拖拽排序事件
+					tableBody.addEventListener('dragstart', function(e) {
+						const row = e.target.closest('tr.main-row');
+						if (!row) return;
+						if (!e.target.classList.contains('drag-handle-row')) {
+							e.preventDefault();
+							return;
+						}
+						const index = row.dataset.index;
+						e.dataTransfer.setData('text/plain', index);
+						e.dataTransfer.effectAllowed = 'move';
+						row.classList.add('dragging');
+					});
+
+					tableBody.addEventListener('dragover', function(e) {
+						e.preventDefault();
+						e.dataTransfer.dropEffect = 'move';
+						const targetRow = e.target.closest('tr.main-row');
+						if (targetRow) {
+							tableBody.querySelectorAll('tr.main-row').forEach(r => r.classList.remove('drag-over'));
+							targetRow.classList.add('drag-over');
+						}
+					});
+
+					tableBody.addEventListener('dragleave', function(e) {
+						const targetRow = e.target.closest('tr.main-row');
+						if (targetRow) {
+							targetRow.classList.remove('drag-over');
+						}
+					});
+
+					tableBody.addEventListener('drop', function(e) {
+						e.preventDefault();
+						const targetRow = e.target.closest('tr.main-row');
+						if (!targetRow) return;
+						targetRow.classList.remove('drag-over');
+
+						const dragIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+						const dropIndex = parseInt(targetRow.dataset.index, 10);
+						if (isNaN(dragIndex) || isNaN(dropIndex) || dragIndex === dropIndex) return;
+
+						const dragRow = rows[dragIndex];
+						const dropRow = rows[dropIndex];
+						if (!dragRow || !dropRow) return;
+
+						const dragOrder = dragRow.order;
+						const dropOrder = dropRow.order;
+
+						const batch = db.batch();
+						const dragRef = db.collection('testcases').doc(dragRow.id);
+						const dropRef = db.collection('testcases').doc(dropRow.id);
+						batch.update(dragRef, {
+							order: dropOrder
+						});
+						batch.update(dropRef, {
+							order: dragOrder
+						});
+						batch.commit()
+							.then(() => showToast('顺序已更新', 'success'))
+							.catch(err => showToast('排序失败：' + err.message, 'error'));
+					});
+
+					tableBody.addEventListener('dragend', function(e) {
+						const row = e.target.closest('tr.main-row');
+						if (row) row.classList.remove('dragging');
+						tableBody.querySelectorAll('tr.main-row.drag-over').forEach(r => r.classList.remove(
+							'drag-over'));
+					});
+
 					// 3. 首次渲染表格（此时 rows 为空，稍后由 Firebase 填充）
 					renderTable();
 					titleInput.focus();
@@ -3558,16 +3539,15 @@
 					auth.signInAnonymously()
 						.then(() => {
 							console.log('✅ Firebase 匿名登录成功');
-							// 登录成功后启动数据监听
 							startDataSync();
 							showToast('已连接云端，数据实时同步', 'success');
 						})
 						.catch((err) => {
 							console.error('❌ Firebase 登录失败', err);
 							showToast('无法连接数据库，数据将保存在本地（刷新后丢失）', 'error');
-							// 可降级为本地模式（根据需要，此处留空）
 						});
 				}
+
 				if (document.readyState === 'loading') {
 					document.addEventListener('DOMContentLoaded', init);
 				} else {
