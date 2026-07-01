@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parten-V1.2 · 组合结果实时同步</title>
+    <title>Parten-V1.0 · 组合结果实时同步</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -900,7 +900,8 @@
         function resetAllLocal() {
             cardsData = INITIAL_DATA.map(card => createCardData(card.title, card.inputs.map(inp => ({value: inp.value, checked: true}))));
             expandedStates = INITIAL_EXPANDED.slice();
-            prefixInputs = ['', ''];
+            // ★★★ 默认前缀设为 C001 ★★★
+            prefixInputs = ['C', '001'];
             prefixTitle = '标题前缀';
             // 不修改 results, nextId
         }
@@ -1218,7 +1219,7 @@
 
         // ---------- 启动 ----------
         // 先渲染空卡片，等待Firebase数据填充结果
-        resetAllLocal();
+        resetAllLocal();  // 这里已经设置 prefixInputs = ['C', '001']
         render();
         renderResults();
         updateReorderButton();
