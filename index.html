@@ -2615,7 +2615,7 @@
 					});
 					tableBody.innerHTML = bodyHtml;
 
-					// 绑定主行点击展开/收起（每次渲染重新绑定）
+					// 行点击展开/收起（每次渲染重新绑定）
 					tableBody.querySelectorAll('.main-row').forEach(row => {
 						row.addEventListener('click', function(e) {
 							if (e.target.closest('.btn-action') || e.target.closest(
@@ -2629,7 +2629,6 @@
 						});
 					});
 
-					// 更新全选状态
 					updateCheckAllState();
 				}
 
@@ -3352,7 +3351,7 @@
 				// ---------- 初始化函数（整合 Firebase 登录 + UI 初始化） ----------
 				// ---------- 初始化函数（事件绑定与登录分离） ----------
 				function init() {
-					// 1. 先执行所有 UI 渲染和事件绑定（不依赖 Firebase）
+					// 1. UI 渲染（不依赖 Firebase）
 					applyFieldLabels();
 					renderLevels(Array(levelCount).fill(''));
 					renderSteps(Array(stepCount).fill({
@@ -3362,15 +3361,12 @@
 					initDragDrop();
 					bindCheckAll();
 
-					// 2. 绑定所有按钮事件（这些都会被执行，无论登录状态）
-					// 阶层折叠
+					// 2. 按钮事件绑定
 					levelsToggleHeader.addEventListener('click', toggleLevels);
 					editLevelsTitle.addEventListener('click', function(e) {
 						e.stopPropagation();
 						openEditLevels();
 					});
-
-					// 阶层编辑模态框
 					editLevelsCancel.addEventListener('click', closeEditLevels);
 					editLevelsOverlay.addEventListener('click', function(e) {
 						if (e.target === editLevelsOverlay) closeEditLevels();
@@ -3378,12 +3374,9 @@
 					editLevelsSave.addEventListener('click', saveEditLevels);
 					editLevelsAddBtn.addEventListener('click', editLevelsAddRow);
 					editLevelsRemoveBtn.addEventListener('click', editLevelsRemoveLastRow);
-
-					// 阶层增删
 					addLevelBtn.addEventListener('click', addLevel);
 					removeLevelBtn.addEventListener('click', removeLastLevel);
 
-					// 字段标签编辑
 					document.querySelectorAll('.edit-icon[data-target]').forEach(btn => {
 						btn.addEventListener('click', function(e) {
 							const target = this.getAttribute('data-target');
@@ -3394,7 +3387,6 @@
 						openModal('sectionTitle');
 					});
 
-					// 模态框
 					modalConfirm.addEventListener('click', confirmModal);
 					modalCancel.addEventListener('click', closeModal);
 					modalOverlay.addEventListener('click', function(e) {
@@ -3407,7 +3399,6 @@
 						if (e.key === 'Enter') confirmModal();
 					});
 
-					// 编辑用例模态框
 					editCaseSave.addEventListener('click', saveEditCase);
 					editCaseCancel.addEventListener('click', closeEditCase);
 					editOverlay.addEventListener('click', function(e) {
@@ -3417,24 +3408,20 @@
 					editCaseLevelAddBtn.addEventListener('click', editCaseLevelAdd);
 					editCaseLevelRemoveBtn.addEventListener('click', editCaseLevelRemoveLast);
 
-					// 主按钮
 					btnAdd.addEventListener('click', addRow);
 					btnReset.addEventListener('click', resetInputs);
 					btnFillDemo.addEventListener('click', fillDemo);
 					btnExportTop.addEventListener('click', exportExcel);
 					btnExportBottom.addEventListener('click', exportExcel);
 
-					// 步骤按钮
 					addStepBtn.addEventListener('click', addStep);
 					removeStepBtn.addEventListener('click', removeLastStep);
 					addStepBtnBottom.addEventListener('click', addStep);
 					removeStepBtnBottom.addEventListener('click', removeLastStep);
 
-					// 表格工具栏
 					deleteSelected.addEventListener('click', deleteSelectedRows);
 					clearAllCases.addEventListener('click', clearAllCasesHandler);
 
-					// 输入框按 Enter 触发添加
 					document.querySelectorAll('.input-group input, .input-group textarea, .input-group select').forEach(
 					el => {
 						el.addEventListener('keydown', function(e) {
@@ -3445,8 +3432,8 @@
 						});
 					});
 
-					// ---- 表格事件委托（一次性绑定，避免重复监听） ----
-					// 操作按钮（编辑、删除、复制）
+					// ---- 表格事件委托（一次性绑定） ----
+					// 操作按钮：编辑、删除、复制
 					tableBody.addEventListener('click', function(e) {
 						const btn = e.target.closest('.btn-action');
 						if (!btn) return;
@@ -3462,7 +3449,7 @@
 						}
 					});
 
-					// 拖拽排序事件
+					// 拖拽排序（插入式）
 					tableBody.addEventListener('dragstart', function(e) {
 						const row = e.target.closest('tr.main-row');
 						if (!row) return;
@@ -3503,21 +3490,24 @@
 						const dropIndex = parseInt(targetRow.dataset.index, 10);
 						if (isNaN(dragIndex) || isNaN(dropIndex) || dragIndex === dropIndex) return;
 
-						const dragRow = rows[dragIndex];
-						const dropRow = rows[dropIndex];
-						if (!dragRow || !dropRow) return;
+						// 1. 从 rows 中移除拖拽项
+						const newRows = [...rows];
+						const [movedItem] = newRows.splice(dragIndex, 1);
 
-						const dragOrder = dragRow.order;
-						const dropOrder = dropRow.order;
+						// 2. 计算插入位置（若目标在源之后，需调整索引）
+						let insertIndex = dropIndex;
+						if (dropIndex > dragIndex) {
+							insertIndex = dropIndex - 1;
+						}
+						newRows.splice(insertIndex, 0, movedItem);
 
+						// 3. 批量更新所有文档的 order 为新索引
 						const batch = db.batch();
-						const dragRef = db.collection('testcases').doc(dragRow.id);
-						const dropRef = db.collection('testcases').doc(dropRow.id);
-						batch.update(dragRef, {
-							order: dropOrder
-						});
-						batch.update(dropRef, {
-							order: dragOrder
+						newRows.forEach((row, idx) => {
+							const ref = db.collection('testcases').doc(row.id);
+							batch.update(ref, {
+								order: idx
+							});
 						});
 						batch.commit()
 							.then(() => showToast('顺序已更新', 'success'))
@@ -3531,11 +3521,11 @@
 							'drag-over'));
 					});
 
-					// 3. 首次渲染表格（此时 rows 为空，稍后由 Firebase 填充）
+					// 3. 首次渲染表格
 					renderTable();
 					titleInput.focus();
 
-					// 4. 然后尝试登录 Firebase（不影响界面交互）
+					// 4. Firebase 登录 + 数据同步
 					auth.signInAnonymously()
 						.then(() => {
 							console.log('✅ Firebase 匿名登录成功');
