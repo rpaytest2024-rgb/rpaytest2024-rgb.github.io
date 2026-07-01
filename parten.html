@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parten-V1.0 · 动态区域管理</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #f5f7fb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 30px 20px; display: flex; justify-content: center; }
+        .app { max-width: 900px; width: 100%; }
+        .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+        .app-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; margin: 0; }
+        .app-header .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .cards-wrapper { display: flex; flex-direction: column; gap: 16px; }
+        .card { background: #ffffff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04); border: 1px solid #e9edf4; overflow: hidden; }
+        .card-header { display: flex; align-items: center; gap: 8px; padding: 16px 20px; cursor: pointer; user-select: none; background: #fafcff; border-bottom: 1px solid #eef2f8; transition: background 0.15s; }
+        .card-header:hover { background: #f2f6fe; }
+        .card-header .title { flex: 1; font-size: 18px; font-weight: 600; color: #0b1e3a; outline: none; padding: 4px 6px; border-radius: 6px; min-width: 60px; }
+        .card-header .title:focus { background: #fff; box-shadow: 0 0 0 2px #b3d0ff; }
+        .card-header .title::before { content: "✎ "; font-weight: 400; color: #94a3b8; font-size: 14px; }
+        .card-header .header-actions { display: flex; gap: 2px; align-items: center; margin-left: auto; }
+        .card-header .header-actions .btn-icon { background: transparent; border: none; font-size: 18px; line-height: 1; padding: 4px 6px; border-radius: 6px; cursor: pointer; color: #64748b; transition: background 0.15s, color 0.15s; display: inline-flex; align-items: center; justify-content: center; }
+        .card-header .header-actions .btn-icon:hover { background: #e2e8f0; color: #0f172a; }
+        .card-header .header-actions .btn-icon.danger:hover { background: #fee2e2; color: #b91c1c; }
+        .card-header .header-actions .btn-icon:disabled { opacity: 0.3; pointer-events: none; }
+        .card-header .toggle-icon { font-size: 18px; color: #64748b; transition: transform 0.25s ease; margin-left: 4px; }
+        .card.collapsed .toggle-icon { transform: rotate(-90deg); }
+        .card-body { padding: 20px 20px 16px; transition: max-height 0.3s ease, padding 0.3s ease; max-height: 5000px; overflow: hidden; }
+        .card.collapsed .card-body { max-height: 0 !important; padding: 0 20px; overflow: hidden; }
+        .fixed-card .card-header { cursor: default; background: #f8fafc; }
+        .fixed-card .card-header:hover { background: #f8fafc; }
+        .fixed-card .card-body { padding: 16px 20px; }
+        .prefix-container { display: flex; flex-direction: column; gap: 12px; }
+        .prefix-rows { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+        .prefix-item-wrapper { display: flex; align-items: center; gap: 6px; }
+        .prefix-item { display: flex; align-items: center; gap: 6px; flex: 0 1 auto; }
+        .prefix-item label { font-size: 13px; color: #64748b; font-weight: 500; white-space: nowrap; }
+        .prefix-item input { width: 120px; border: 1px solid #d1d9e6; border-radius: 6px; padding: 6px 10px; font-size: 14px; outline: none; transition: border-color 0.2s; flex-shrink: 1; min-width: 80px; }
+        .prefix-item input:focus { border-color: #7ca9f0; box-shadow: 0 0 0 3px rgba(124,169,240,0.15); }
+        .prefix-item-wrapper .btn-icon { background: transparent; border: none; font-size: 16px; line-height: 1; padding: 4px 6px; border-radius: 6px; cursor: pointer; color: #64748b; transition: background 0.15s, color 0.15s; }
+        .prefix-item-wrapper .btn-icon:hover { background: #e2e8f0; color: #0f172a; }
+        .prefix-item-wrapper .btn-icon.danger:hover { background: #fee2e2; color: #b91c1c; }
+        .prefix-item-wrapper .btn-icon:disabled { opacity: 0.3; pointer-events: none; }
+        .prefix-actions { display: flex; gap: 8px; margin-top: 4px; }
+        .input-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+        .input-item { display: flex; align-items: center; gap: 8px; padding: 0; background: transparent; }
+        .input-item .index { font-size: 14px; font-weight: 600; color: #475569; min-width: 40px; text-align: center; font-variant-numeric: tabular-nums; background: transparent; padding: 0 4px; line-height: 1; }
+        .input-item input[type="checkbox"] { cursor: pointer; width: 16px; height: 16px; margin: 0; flex-shrink: 0; }
+        .input-item .text-input { flex: 1; border: 1px solid #d1d9e6; border-radius: 8px; padding: 8px 14px; font-size: 15px; color: #0f172a; background: #ffffff; outline: none; transition: border-color 0.2s; min-width: 120px; }
+        .input-item .text-input:focus { border-color: #7ca9f0; box-shadow: 0 0 0 3px rgba(124,169,240,0.15); }
+        .input-item .text-input::placeholder { color: #aab4c4; font-weight: 400; }
+        .input-item .btn-icon { background: transparent; border: none; font-size: 18px; line-height: 1; padding: 6px 8px; border-radius: 8px; cursor: pointer; color: #64748b; transition: background 0.15s, color 0.15s; display: inline-flex; align-items: center; justify-content: center; }
+        .input-item .btn-icon:hover { background: #e2e8f0; color: #0f172a; }
+        .input-item .btn-icon.danger:hover { background: #fee2e2; color: #b91c1c; }
+        .input-item .btn-icon:disabled { opacity: 0.3; pointer-events: none; }
+        .card-header .card-checkbox { margin-right: 4px; cursor: pointer; width: 16px; height: 16px; }
+        .input-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+        .btn-outline { background: transparent; border: 1px dashed #cbd5e1; padding: 8px 18px; border-radius: 30px; font-size: 14px; font-weight: 500; color: #334155; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-outline:hover { border-color: #7c8ca6; background: #f1f5f9; }
+        .btn-outline.primary { border-color: #b3d0ff; color: #1e4f8a; }
+        .btn-outline.primary:hover { background: #e8f0fe; border-color: #7ca9f0; }
+        .btn-outline.danger { border-color: #fca5a5; color: #991b1b; }
+        .btn-outline.danger:hover { background: #fee2e2; border-color: #ef4444; }
+        .btn-outline.warning { border-color: #fcd34d; color: #92400e; }
+        .btn-outline.warning:hover { background: #fef3c7; border-color: #f59e0b; }
+        .btn-outline:disabled { opacity: 0.4; pointer-events: none; }
+        .card-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-top: 12px; border-top: 1px solid #eef2f8; margin-top: 6px; }
+        .card-footer .btn-outline { font-size: 13px; padding: 6px 16px; }
+        .global-actions { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .global-actions .left-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        .global-actions .right-actions { display: flex; gap: 12px; }
+        .btn-add-card { background: #ffffff; border: 2px dashed #cbd5e1; padding: 12px 32px; border-radius: 60px; font-size: 16px; font-weight: 500; color: #334155; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-add-card:hover { border-color: #7c8ca6; background: #f8fafc; }
+        .btn-add-card.reset-btn { border-color: #fcd34d; color: #92400e; }
+        .btn-add-card.reset-btn:hover { background: #fef3c7; border-color: #f59e0b; }
+        .btn-add-card.generate-btn { border-color: #6ee7b7; color: #065f46; }
+        .btn-add-card.generate-btn:hover { background: #d1fae5; border-color: #34d399; }
+        .btn-add-card.example-btn { border-color: #93c5fd; color: #1e3a8a; }
+        .btn-add-card.example-btn:hover { background: #dbeafe; border-color: #60a5fa; }
+        .badge { font-size: 12px; font-weight: 400; color: #94a3b8; background: #eef2f8; padding: 2px 10px; border-radius: 20px; margin-left: 6px; }
+        .preview-area { margin-top: 24px; background: #ffffff; border-radius: 16px; border: 1px solid #e9edf4; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+        .preview-area h3 { font-size: 18px; color: #0b1e3a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .preview-area .result-count { font-size: 14px; font-weight: 400; color: #64748b; }
+        .preview-area .result-toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 12px 0; }
+        .preview-area .result-toolbar .btn-sm { padding: 4px 12px; font-size: 13px; border-radius: 20px; border: 1px solid #d1d9e6; background: transparent; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+        .preview-area .result-toolbar .btn-sm:hover { background: #f1f5f9; border-color: #94a3b8; }
+        .preview-area .result-toolbar .btn-sm.danger { border-color: #fca5a5; color: #991b1b; }
+        .preview-area .result-toolbar .btn-sm.danger:hover { background: #fee2e2; border-color: #ef4444; }
+        .preview-area .result-toolbar .btn-sm.primary { border-color: #b3d0ff; color: #1e4f8a; }
+        .preview-area .result-toolbar .btn-sm.primary:hover { background: #e8f0fe; border-color: #7ca9f0; }
+        .preview-area .result-toolbar .btn-sm:disabled { opacity: 0.4; pointer-events: none; }
+        .preview-area .result-list { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+        .preview-area .result-item { display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: #f8fafc; border-radius: 6px; font-size: 14px; color: #0f172a; border-left: 3px solid #b3d0ff; }
+        .preview-area .result-item .result-text { flex: 1; word-break: break-all; }
+        .preview-area .result-item .result-text .prefix-part { background: #dbeafe; color: #1e3a8a; font-weight: 700; padding: 1px 4px; border-radius: 3px; margin: 0 1px; }
+        .preview-area .result-item .result-text .normal-part { color: #0f172a; }
+        .preview-area .result-item .item-actions { display: flex; gap: 4px; align-items: center; }
+        .preview-area .result-item .item-actions .btn-icon { background: transparent; border: none; font-size: 16px; line-height: 1; padding: 2px 6px; border-radius: 4px; cursor: pointer; color: #64748b; transition: background 0.15s, color 0.15s; }
+        .preview-area .result-item .item-actions .btn-icon:hover { background: #e2e8f0; color: #0f172a; }
+        .preview-area .result-item .item-actions .btn-icon.danger:hover { background: #fee2e2; color: #b91c1c; }
+        .preview-area .result-item input[type="checkbox"] { cursor: pointer; width: 16px; height: 16px; }
+        .preview-area .empty-message { color: #94a3b8; font-size: 14px; padding: 20px 0; text-align: center; }
+        .result-edit-input { flex: 1; border: 1px solid #7ca9f0; border-radius: 6px; padding: 4px 8px; font-size: 14px; background: #fff; outline: none; min-width: 120px; }
+        .result-edit-actions { display: flex; gap: 4px; }
+        .result-edit-actions .btn-sm { padding: 2px 8px; font-size: 12px; border-radius: 4px; border: 1px solid #d1d9e6; background: transparent; cursor: pointer; }
+        .result-edit-actions .btn-sm:hover { background: #f1f5f9; }
+        .result-edit-actions .btn-sm.primary { border-color: #b3d0ff; color: #1e4f8a; }
+        .result-edit-actions .btn-sm.primary:hover { background: #e8f0fe; }
+        .result-edit-actions .btn-sm.danger { border-color: #fca5a5; color: #991b1b; }
+        .result-edit-actions .btn-sm.danger:hover { background: #fee2e2; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; max-width: 80%; text-align: center; }
+        .toast.show { opacity: 1; }
+        @media (max-width: 640px) {
+            .app-header { flex-direction: column; align-items: stretch; }
+            .app-header .header-actions { justify-content: flex-start; }
+            .global-actions { flex-direction: column; align-items: stretch; }
+            .global-actions .left-actions, .global-actions .right-actions { justify-content: center; }
+            .card-header { flex-wrap: wrap; }
+            .card-header .title { font-size: 16px; }
+            .input-item { flex-wrap: wrap; gap: 6px; }
+            .input-item .index { min-width: 30px; }
+            .input-item .text-input { min-width: 100px; }
+            .card-footer { flex-direction: column; align-items: stretch; }
+            .preview-area .result-item { flex-wrap: wrap; gap: 4px; }
+            .preview-area .result-item .item-actions { margin-left: auto; }
+            .prefix-item input { width: 100%; min-width: 80px; }
+            .prefix-rows { flex-direction: column; align-items: stretch; }
+            .prefix-item-wrapper { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="app-header">
+        <h1>📋 Parten-V1.0</h1>
+        <div class="header-actions">
+            <button class="btn-add-card" id="addCardBtnHeader">＋ 添加新区域</button>
+            <button class="btn-add-card reset-btn" id="resetAllBtnHeader">↺ 重置</button>
+        </div>
+    </div>
+    <div class="cards-wrapper" id="cardsContainer"></div>
+    <div class="global-actions">
+        <div class="left-actions">
+            <button class="btn-add-card" id="addCardBtnFooter">＋ 添加新区域</button>
+            <button class="btn-add-card reset-btn" id="resetAllBtnFooter">↺ 重置</button>
+            <button class="btn-add-card example-btn" id="exampleBtn">📋 示例数据</button>
+        </div>
+        <div class="right-actions">
+            <button class="btn-add-card generate-btn" id="generateBtn">⚡ 生成</button>
+        </div>
+    </div>
+    <div class="preview-area" id="previewArea">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <h3 style="margin:0;">
+                📊 组合结果
+                <span class="result-count" id="resultCount"></span>
+            </h3>
+            <div class="result-toolbar">
+                <button class="btn-sm" id="selectAllBtn">☑ 全选</button>
+                <button class="btn-sm" id="reorderBtn" disabled>↺ 重新排序</button>
+                <button class="btn-sm danger" id="clearResultsBtn">✕ 清空</button>
+                <button class="btn-sm danger" id="deleteSelectedBtn">✕ 删除选中</button>
+                <button class="btn-sm primary" id="exportExcelBtn">📊 导出Excel</button>
+            </div>
+        </div>
+        <div class="result-list" id="resultList"></div>
+        <div class="result-toolbar" style="margin-top:12px;">
+            <button class="btn-sm" id="selectAllBtnBottom">☑ 全选</button>
+            <button class="btn-sm" id="reorderBtnBottom" disabled>↺ 重新排序</button>
+            <button class="btn-sm danger" id="clearResultsBtnBottom">✕ 清空</button>
+            <button class="btn-sm danger" id="deleteSelectedBtnBottom">✕ 删除选中</button>
+            <button class="btn-sm primary" id="exportExcelBtnBottom">📊 导出Excel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast 消息 -->
+<div id="toast" class="toast"></div>
+
+<script>
+    (function() {
+        // ---------- 初始状态 ----------
+        const INITIAL_DATA = [
+            { title: '前提条件', inputs: [{value:'', checked:true}, {value:'', checked:true}, {value:'', checked:true}] },
+            { title: '条件1', inputs: [{value:'', checked:true}, {value:'', checked:true}, {value:'', checked:true}] }
+        ];
+        const INITIAL_EXPANDED = [true, true];
+
+        function createCardData(title = '新区域', inputs = null) {
+            if (!inputs) {
+                inputs = [{value:'', checked:true}, {value:'', checked:true}, {value:'', checked:true}];
+            }
+            return { title, inputs };
+        }
+
+        let cardsData = [];
+        let expandedStates = [];
+        let prefixInputs = ['', ''];
+        let prefixTitle = '标题前缀';
+        let results = [];
+        let nextId = 1;
+        let editingId = null;
+
+        const container = document.getElementById('cardsContainer');
+        const previewArea = document.getElementById('previewArea');
+        const resultList = document.getElementById('resultList');
+        const resultCount = document.getElementById('resultCount');
+        const reorderBtn = document.getElementById('reorderBtn');
+        const reorderBtnBottom = document.getElementById('reorderBtnBottom');
+        const toastEl = document.getElementById('toast');
+        let toastTimer = null;
+
+        function showToast(msg, duration = 2000) {
+            toastEl.textContent = msg;
+            toastEl.classList.add('show');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toastEl.classList.remove('show');
+            }, duration);
+        }
+
+        // 辅助
+        function formatIndex(num) {
+            if (num < 100) return String(num).padStart(2, '0');
+            return String(num);
+        }
+
+        function filterNumberInput(value) {
+            return value.replace(/[^0-9]/g, '');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function computeCardChecked(card) {
+            if (!card.inputs || card.inputs.length === 0) return false;
+            return card.inputs.every(item => item.checked === true);
+        }
+
+        function extractNumberInfo(str) {
+            const match = str.match(/(\d+)$/);
+            if (!match) return null;
+            const numStr = match[1];
+            const num = parseInt(numStr, 10);
+            const len = numStr.length;
+            return { num, len };
+        }
+
+        // ---------- 获取下一个条件编号 ----------
+        function getNextConditionTitle() {
+            let maxNum = 0;
+            cardsData.forEach(card => {
+                const title = card.title || '';
+                const match = title.match(/^条件(\d+)$/);
+                if (match) {
+                    const num = parseInt(match[1], 10);
+                    if (num > maxNum) maxNum = num;
+                }
+            });
+            return '条件' + (maxNum + 1);
+        }
+
+        // ---------- 渲染 ----------
+        function render() {
+            while (expandedStates.length < cardsData.length) expandedStates.push(false);
+            while (expandedStates.length > cardsData.length) expandedStates.pop();
+
+            let html = '';
+
+            // 固定卡片
+            let prefixHtml = '';
+            prefixHtml += `<div class="prefix-rows">`;
+            prefixInputs.forEach((val, idx) => {
+                let label;
+                if (idx === 0) label = '前缀';
+                else if (idx === 1) label = '序号';
+                else label = `_入力框${idx+1}`;
+                const isFixed = (idx === 0 || idx === 1);
+                const canDelete = !isFixed && prefixInputs.length > 2;
+                prefixHtml += `
+                    <div class="prefix-item-wrapper" data-prefix-index="${idx}">
+                        <div class="prefix-item">
+                            <label>${label}</label>
+                            <input type="text" class="prefix-input" data-prefix-index="${idx}" value="${escapeHtml(val)}" placeholder="输入…" />
+                        </div>
+                        ${!isFixed ? `
+                        <button class="btn-icon danger" data-action="removePrefix" data-prefix-index="${idx}" title="删除此输入框" ${canDelete ? '' : 'disabled'}>✕</button>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            prefixHtml += `</div>`;
+
+            html += `
+                <div class="card fixed-card">
+                    <div class="card-header" style="cursor:default;">
+                        <span class="title" contenteditable="true" data-action="editPrefixTitle" style="cursor:text;">${escapeHtml(prefixTitle)}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="prefix-container">
+                            ${prefixHtml}
+                            <div class="prefix-actions">
+                                <button class="btn-outline primary" data-action="addPrefix">＋ 添加输入框</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 普通卡片
+            cardsData.forEach((card, index) => {
+                const isExpanded = expandedStates[index] || false;
+                const title = card.title.trim() || '未命名区域';
+                const inputs = card.inputs;
+                const isOnlyCard = cardsData.length <= 1;
+                const canMoveCardUp = index > 0;
+                const canMoveCardDown = index < cardsData.length - 1;
+                const allChecked = computeCardChecked(card);
+
+                let inputsHtml = '';
+                inputs.forEach((item, inpIdx) => {
+                    const val = item.value;
+                    const checked = item.checked;
+                    const disableRemove = (inputs.length <= 1);
+                    const canMoveUp = inpIdx > 0;
+                    const canMoveDown = inpIdx < inputs.length - 1;
+                    const idxDisplay = formatIndex(inpIdx + 1);
+
+                    inputsHtml += `
+                        <div class="input-item" data-card-index="${index}" data-input-index="${inpIdx}">
+                            <input type="checkbox" class="input-checkbox" data-card-index="${index}" data-input-index="${inpIdx}" ${checked ? 'checked' : ''}>
+                            <span class="index">${idxDisplay}</span>
+                            <input type="text" class="text-input" value="${escapeHtml(val)}" placeholder="输入内容…" />
+                            <button class="btn-icon" data-action="moveUp" title="上移" ${canMoveUp ? '' : 'disabled'}>↑</button>
+                            <button class="btn-icon" data-action="moveDown" title="下移" ${canMoveDown ? '' : 'disabled'}>↓</button>
+                            <button class="btn-icon" data-action="copyInput" title="复制此输入框">⎘</button>
+                            <button class="btn-icon danger" data-action="removeInput" title="删除此输入框" ${disableRemove ? 'disabled' : ''}>✕</button>
+                        </div>
+                    `;
+                });
+
+                html += `
+                    <div class="card ${isExpanded ? '' : 'collapsed'}" data-card-index="${index}">
+                        <div class="card-header" data-action="toggleCard">
+                            <input type="checkbox" class="card-checkbox" data-action="toggleCardCheck" data-card-index="${index}" ${allChecked ? 'checked' : ''}>
+                            <span class="title" contenteditable="true" data-action="editTitle">${escapeHtml(title)}</span>
+                            <span class="badge">${inputs.length} 项</span>
+                            <div class="header-actions">
+                                <button class="btn-icon" data-action="moveCardUp" title="区域上移" ${canMoveCardUp ? '' : 'disabled'}>↑</button>
+                                <button class="btn-icon" data-action="moveCardDown" title="区域下移" ${canMoveCardDown ? '' : 'disabled'}>↓</button>
+                                <button class="btn-icon" data-action="addCard" title="添加区域">＋</button>
+                                <button class="btn-icon" data-action="copyCard" title="复制区域">⎘</button>
+                                <button class="btn-icon danger" data-action="removeCard" title="删除区域" ${isOnlyCard ? 'disabled' : ''}>✕</button>
+                            </div>
+                            <span class="toggle-icon">▼</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="input-list" data-card-index="${index}">
+                                ${inputsHtml}
+                            </div>
+                            <div class="input-actions">
+                                <button class="btn-outline primary" data-action="addInput">＋ 添加输入框</button>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn-outline" data-action="addCard">＋ 新增区域</button>
+                                <button class="btn-outline" data-action="copyCard">⎘ 复制此区域</button>
+                                <button class="btn-outline danger" data-action="removeCard" ${isOnlyCard ? 'disabled' : ''}>✕ 删除此区域</button>
+                                <button class="btn-outline warning" data-action="resetCard">↺ 重置区域</button>
+                                <button class="btn-outline" data-action="clearCard">✕ 清空区域</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            // 绑定事件：前缀输入框
+            document.querySelectorAll('.prefix-input').forEach(input => {
+                input.addEventListener('input', function() {
+                    const idx = parseInt(this.dataset.prefixIndex, 10);
+                    if (!isNaN(idx) && idx >= 0 && idx < prefixInputs.length) {
+                        let value = this.value;
+                        if (idx === 1) {
+                            value = filterNumberInput(value);
+                            this.value = value;
+                        }
+                        prefixInputs[idx] = value;
+                    }
+                });
+            });
+
+            // 标题编辑
+            const titleEl = document.querySelector('.fixed-card .title[contenteditable]');
+            if (titleEl) {
+                titleEl.addEventListener('input', function() {
+                    prefixTitle = this.textContent.trim() || '标题前缀';
+                });
+                titleEl.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+                });
+            }
+
+            // 普通卡片的输入框内容同步
+            document.querySelectorAll('.input-item .text-input').forEach(input => {
+                input.addEventListener('input', function() {
+                    const item = this.closest('.input-item');
+                    if (!item) return;
+                    const cardIndex = parseInt(item.dataset.cardIndex, 10);
+                    const inputIndex = parseInt(item.dataset.inputIndex, 10);
+                    if (isNaN(cardIndex) || isNaN(inputIndex)) return;
+                    cardsData[cardIndex].inputs[inputIndex].value = this.value;
+                });
+            });
+
+            // 行checkbox事件
+            document.querySelectorAll('.input-item .input-checkbox').forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const cardIndex = parseInt(this.dataset.cardIndex, 10);
+                    const inputIndex = parseInt(this.dataset.inputIndex, 10);
+                    if (isNaN(cardIndex) || isNaN(inputIndex)) return;
+                    cardsData[cardIndex].inputs[inputIndex].checked = this.checked;
+                    render();
+                });
+            });
+
+            // 大区域checkbox事件
+            document.querySelectorAll('.card .card-checkbox').forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const cardIndex = parseInt(this.dataset.cardIndex, 10);
+                    if (isNaN(cardIndex)) return;
+                    const checked = this.checked;
+                    cardsData[cardIndex].inputs.forEach(item => item.checked = checked);
+                    render();
+                });
+            });
+
+            // 卡片标题编辑（普通卡片）
+            document.querySelectorAll('.card:not(.fixed-card) .title[contenteditable]').forEach(el => {
+                el.addEventListener('input', function() {
+                    const cardEl = this.closest('.card');
+                    if (!cardEl) return;
+                    const index = parseInt(cardEl.dataset.cardIndex, 10);
+                    if (isNaN(index)) return;
+                    cardsData[index].title = this.textContent.trim() || '未命名区域';
+                });
+                el.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+                });
+            });
+        }
+
+        // ---------- 渲染结果 ----------
+        function renderResults() {
+            resultCount.textContent = results.length ? `共 ${results.length} 条` : '';
+            if (results.length === 0) {
+                resultList.innerHTML = `<div class="empty-message">暂无组合结果，请点击“生成”或加载示例数据</div>`;
+                reorderBtn.disabled = true;
+                reorderBtnBottom.disabled = true;
+                return;
+            }
+
+            let html = '';
+            results.forEach((item, index) => {
+                const isEditing = (editingId === item.id);
+                let contentHtml = '';
+                if (isEditing) {
+                    contentHtml = `
+                        <input type="text" class="result-edit-input" id="edit-input-${item.id}" value="${escapeHtml(item.text)}" />
+                        <div class="result-edit-actions">
+                            <button class="btn-sm primary" data-action="saveResult" data-id="${item.id}">保存</button>
+                            <button class="btn-sm danger" data-action="cancelEdit" data-id="${item.id}">取消</button>
+                        </div>
+                    `;
+                } else {
+                    let textHtml = '';
+                    if (item.parts && item.parts.length) {
+                        item.parts.forEach((part, idx) => {
+                            const isPrefix = idx < item.prefixCount;
+                            const cls = isPrefix ? 'prefix-part' : 'normal-part';
+                            textHtml += `<span class="${cls}">${escapeHtml(part)}</span>`;
+                            if (idx < item.parts.length - 1) {
+                                textHtml += '<span style="color:#94a3b8;">_</span>';
+                            }
+                        });
+                    } else {
+                        textHtml = escapeHtml(item.text);
+                    }
+                    contentHtml = `<span class="result-text">${textHtml}</span>`;
+                }
+
+                html += `
+                    <div class="result-item" data-id="${item.id}">
+                        <input type="checkbox" class="result-checkbox" data-id="${item.id}" ${item.selected ? 'checked' : ''}>
+                        ${contentHtml}
+                        <div class="item-actions">
+                            <button class="btn-icon" data-action="copyResult" data-id="${item.id}" title="复制并递增">⎘</button>
+                            <button class="btn-icon" data-action="editResult" data-id="${item.id}" title="编辑">✎</button>
+                            <button class="btn-icon" data-action="moveResultUp" data-id="${item.id}" title="上移" ${index === 0 ? 'disabled' : ''}>↑</button>
+                            <button class="btn-icon" data-action="moveResultDown" data-id="${item.id}" title="下移" ${index === results.length - 1 ? 'disabled' : ''}>↓</button>
+                            <button class="btn-icon danger" data-action="deleteResult" data-id="${item.id}" title="删除">✕</button>
+                        </div>
+                    </div>
+                `;
+            });
+            resultList.innerHTML = html;
+
+            // 绑定checkbox事件
+            document.querySelectorAll('.result-checkbox').forEach(cb => {
+                cb.addEventListener('change', function(e) {
+                    const id = parseInt(this.dataset.id, 10);
+                    const item = results.find(r => r.id === id);
+                    if (item) item.selected = this.checked;
+                    updateReorderButton();
+                });
+            });
+
+            if (editingId !== null) {
+                const input = document.getElementById(`edit-input-${editingId}`);
+                if (input) {
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            saveResult(editingId);
+                        }
+                    });
+                    input.focus();
+                    input.select();
+                }
+            }
+
+            updateReorderButton();
+        }
+
+        function updateReorderButton() {
+            const selected = results.filter(r => r.selected === true);
+            const enabled = selected.length === 1;
+            reorderBtn.disabled = !enabled;
+            reorderBtnBottom.disabled = !enabled;
+        }
+
+        // ---------- 保存编辑 ----------
+        function saveResult(id) {
+            const input = document.getElementById(`edit-input-${id}`);
+            if (!input) return;
+            const newText = input.value.trim();
+            if (!newText) {
+                editingId = null;
+                renderResults();
+                return;
+            }
+            const item = results.find(r => r.id === id);
+            if (!item) return;
+            item.text = newText;
+            let clean = newText.replace(/^【|】$/g, '');
+            let parts = clean.split('_').filter(p => p !== '');
+            if (parts.length === 0) parts = [clean];
+            item.parts = parts;
+            item.prefixCount = 0;
+            editingId = null;
+            renderResults();
+        }
+
+        function cancelEdit(id) {
+            editingId = null;
+            renderResults();
+        }
+
+        // ---------- 复制并递增序号 ----------
+        function copyResultWithIncrement(id) {
+            const item = results.find(r => r.id === id);
+            if (!item) return;
+            const oldParts = item.parts.slice();
+            let newParts = oldParts.slice();
+            let newText = item.text;
+            if (oldParts.length > 0) {
+                const first = oldParts[0];
+                const info = extractNumberInfo(first);
+                if (info) {
+                    const { num, len } = info;
+                    const newNum = num + 1;
+                    let newNumStr;
+                    if (newNum < Math.pow(10, len)) {
+                        newNumStr = String(newNum).padStart(len, '0');
+                    } else {
+                        newNumStr = String(newNum);
+                    }
+                    const prefixWithoutNum = first.slice(0, -len);
+                    const newFirst = prefixWithoutNum + newNumStr;
+                    newParts[0] = newFirst;
+                    newText = '【' + newParts.join('_') + '】';
+                } else {
+                    const newFirst = first + '1';
+                    newParts[0] = newFirst;
+                    newText = '【' + newParts.join('_') + '】';
+                }
+            } else {
+                const match = item.text.match(/(\d+)$/);
+                if (match) {
+                    const numStr = match[1];
+                    const num = parseInt(numStr, 10);
+                    const newNum = num + 1;
+                    const len = numStr.length;
+                    let newNumStr;
+                    if (newNum < Math.pow(10, len)) {
+                        newNumStr = String(newNum).padStart(len, '0');
+                    } else {
+                        newNumStr = String(newNum);
+                    }
+                    newText = item.text.slice(0, -len) + newNumStr;
+                } else {
+                    newText = item.text + '1';
+                }
+                newParts = [newText.replace(/^【|】$/g, '')];
+            }
+            const newItem = {
+                id: nextId++,
+                text: newText,
+                parts: newParts,
+                prefixCount: 0,
+                selected: false
+            };
+            const index = results.findIndex(r => r.id === id);
+            results.splice(index + 1, 0, newItem);
+            renderResults();
+        }
+
+        // ---------- 重新排序 ----------
+        function reorderFromSelected() {
+            const selected = results.filter(r => r.selected === true);
+            if (selected.length !== 1) return;
+            const startItem = selected[0];
+            const startIndex = results.findIndex(r => r.id === startItem.id);
+            if (startIndex === -1) return;
+
+            const firstPart = startItem.parts[0] || '';
+            const info = extractNumberInfo(firstPart);
+            if (!info) {
+                showToast('所选行的前缀中未找到数字，无法重新排序。', 3000);
+                return;
+            }
+            let { num, len } = info;
+            let currentNum = num;
+            for (let j = startIndex + 1; j < results.length; j++) {
+                const item = results[j];
+                let parts = item.parts.slice();
+                if (parts.length === 0) continue;
+                const first2 = parts[0];
+                const info2 = extractNumberInfo(first2);
+                if (!info2) continue;
+                const prefixWithoutNum = first2.slice(0, -info2.len);
+                const newNum = currentNum + 1;
+                let newNumStr;
+                if (newNum < Math.pow(10, len)) {
+                    newNumStr = String(newNum).padStart(len, '0');
+                } else {
+                    newNumStr = String(newNum);
+                }
+                parts[0] = prefixWithoutNum + newNumStr;
+                item.parts = parts;
+                item.text = '【' + parts.join('_') + '】';
+                currentNum = newNum;
+            }
+            results.forEach(r => r.selected = false);
+            renderResults();
+            showToast('重新排序完成', 1500);
+        }
+
+        // ---------- 全选/全不选 ----------
+        function toggleSelectAll() {
+            if (results.length === 0) return;
+            const allSelected = results.every(item => item.selected === true);
+            results.forEach(item => item.selected = !allSelected);
+            renderResults();
+        }
+
+        // ---------- 全局重置 ----------
+        function resetAll() {
+            cardsData = INITIAL_DATA.map(card => createCardData(card.title, card.inputs.map(inp => ({value: inp.value, checked: true}))));
+            expandedStates = INITIAL_EXPANDED.slice();
+            prefixInputs = ['', ''];
+            prefixTitle = '标题前缀';
+            results = [];
+            nextId = 1;
+            editingId = null;
+            render();
+            renderResults();
+        }
+
+        // ---------- 示例数据 ----------
+        function loadExampleData() {
+            cardsData = [
+                createCardData('区域A', [{value:'移动端', checked:true}, {value:'Web端', checked:true}]),
+                createCardData('区域B', [{value:'登录', checked:true}, {value:'搜索', checked:true}, {value:'购物车', checked:true}])
+            ];
+            expandedStates = [true, true];
+            prefixInputs = ['C', '001'];
+            prefixTitle = '标题前缀';
+            results = [];
+            nextId = 1;
+            editingId = null;
+            render();
+            renderResults();
+        }
+
+        // ---------- 生成组合 ----------
+        function generateCombinations() {
+            const prefixStr = prefixInputs[0] ? prefixInputs[0].trim() : '';
+            const seqStr = prefixInputs[1] ? prefixInputs[1].trim() : '';
+            let startNum = null;
+            let seqLen = 0;
+            if (seqStr !== '') {
+                const num = parseInt(seqStr, 10);
+                if (!isNaN(num)) {
+                    startNum = num;
+                    seqLen = seqStr.length;
+                }
+            }
+            const dynamicParts = prefixInputs.slice(2).map(v => v.trim()).filter(v => v !== '');
+
+            const lastSeq = getLastSequenceNumber();
+            let actualStart = startNum;
+            if (lastSeq !== null && startNum !== null) {
+                if (startNum <= lastSeq) {
+                    actualStart = lastSeq + 1;
+                } else {
+                    actualStart = startNum;
+                }
+            }
+
+            const regionArrays = [];
+            cardsData.forEach(card => {
+                const hasChecked = card.inputs.some(item => item.checked === true);
+                let values;
+                if (hasChecked) {
+                    values = card.inputs.filter(item => item.checked === true).map(item => item.value.trim()).filter(v => v !== '');
+                } else {
+                    values = card.inputs.map(item => item.value.trim()).filter(v => v !== '');
+                }
+                if (values.length > 0) {
+                    regionArrays.push(values);
+                }
+            });
+
+            let combinations;
+            if (regionArrays.length === 0) {
+                combinations = [[]];
+            } else {
+                function cartesianProduct(arrays) {
+                    if (arrays.length === 0) return [];
+                    if (arrays.length === 1) return arrays[0].map(item => [item]);
+                    const result = [];
+                    const rest = cartesianProduct(arrays.slice(1));
+                    arrays[0].forEach(item => {
+                        rest.forEach(comb => {
+                            result.push([item, ...comb]);
+                        });
+                    });
+                    return result;
+                }
+                combinations = cartesianProduct(regionArrays);
+            }
+
+            const newResults = [];
+            let currentNum = actualStart;
+            combinations.forEach((comb) => {
+                let seqDisplay = '';
+                if (currentNum !== null) {
+                    if (seqLen > 0 && currentNum < Math.pow(10, seqLen)) {
+                        seqDisplay = String(currentNum).padStart(seqLen, '0');
+                    } else {
+                        seqDisplay = String(currentNum);
+                    }
+                }
+                let combinedPrefix = '';
+                if (prefixStr !== '') combinedPrefix += prefixStr;
+                if (seqDisplay !== '') combinedPrefix += seqDisplay;
+                if (dynamicParts.length > 0) {
+                    if (combinedPrefix !== '') combinedPrefix += '_';
+                    combinedPrefix += dynamicParts.join('_');
+                }
+                const parts = [];
+                if (combinedPrefix !== '') {
+                    parts.push(combinedPrefix);
+                }
+                comb.forEach(v => {
+                    if (v !== '') parts.push(v);
+                });
+                const text = '【' + parts.join('_') + '】';
+                newResults.push({
+                    id: nextId++,
+                    text: text,
+                    parts: parts,
+                    prefixCount: (combinedPrefix !== '') ? 1 : 0,
+                    selected: false
+                });
+                if (currentNum !== null) {
+                    currentNum++;
+                }
+            });
+
+            results = results.concat(newResults);
+            renderResults();
+        }
+
+        function getLastSequenceNumber() {
+            if (results.length === 0) return null;
+            const lastItem = results[results.length - 1];
+            const prefixPart = lastItem.parts && lastItem.parts.length > 0 ? lastItem.parts[0] : '';
+            const match = prefixPart.match(/(\d+)$/);
+            if (match) {
+                return parseInt(match[1], 10);
+            }
+            return null;
+        }
+
+        // ---------- 结果操作 ----------
+        function moveResultUp(id) {
+            const index = results.findIndex(r => r.id === id);
+            if (index <= 0) return;
+            [results[index - 1], results[index]] = [results[index], results[index - 1]];
+            renderResults();
+        }
+
+        function moveResultDown(id) {
+            const index = results.findIndex(r => r.id === id);
+            if (index === -1 || index === results.length - 1) return;
+            [results[index], results[index + 1]] = [results[index + 1], results[index]];
+            renderResults();
+        }
+
+        function deleteResult(id) {
+            results = results.filter(r => r.id !== id);
+            if (editingId === id) editingId = null;
+            renderResults();
+        }
+
+        function deleteSelected() {
+            results = results.filter(r => !r.selected);
+            if (editingId !== null && !results.some(r => r.id === editingId)) editingId = null;
+            renderResults();
+        }
+
+        function clearResults() {
+            results = [];
+            nextId = 1;
+            editingId = null;
+            renderResults();
+        }
+
+        // ---------- 导出Excel ----------
+        function exportExcel() {
+            try {
+                if (results.length === 0) {
+                    showToast('没有数据可导出', 2000);
+                    return;
+                }
+                const selected = results.filter(r => r.selected === true);
+                let dataToExport = (selected.length > 0) ? selected : results;
+                let csv = '\uFEFF';
+                csv += '组合结果\n';
+                dataToExport.forEach(item => {
+                    let text = item.text.replace(/^【|】$/g, '');
+                    csv += text + '\n';
+                });
+
+                if (navigator.msSaveBlob) {
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    navigator.msSaveBlob(blob, '组合结果.csv');
+                    showToast('导出成功！', 2000);
+                    return;
+                }
+
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = '组合结果.csv';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                setTimeout(() => {
+                    link.click();
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                    }, 150);
+                }, 50);
+                showToast('导出成功！如果未自动下载，请检查浏览器下载设置。', 3000);
+            } catch (e) {
+                showToast('导出失败：' + e.message, 3000);
+                console.error(e);
+            }
+        }
+
+        // ---------- 事件委托（卡片操作） ----------
+        container.addEventListener('click', function(e) {
+            const target = e.target.closest('[data-action]');
+            if (!target) return;
+            const action = target.dataset.action;
+
+            if (target.closest('.fixed-card')) {
+                switch (action) {
+                    case 'addPrefix': { prefixInputs.push(''); render(); break; }
+                    case 'removePrefix': {
+                        const idx = parseInt(target.dataset.prefixIndex, 10);
+                        if (isNaN(idx) || idx < 2 || prefixInputs.length <= 2) return;
+                        prefixInputs.splice(idx, 1);
+                        render();
+                        break;
+                    }
+                    default: break;
+                }
+                return;
+            }
+
+            const cardEl = target.closest('.card');
+            if (!cardEl) return;
+            const cardIndexAttr = cardEl.dataset.cardIndex;
+            if (cardIndexAttr === undefined) return;
+            const cardIndex = parseInt(cardIndexAttr, 10);
+            if (isNaN(cardIndex)) return;
+
+            switch (action) {
+                case 'toggleCard': {
+                    expandedStates[cardIndex] = !expandedStates[cardIndex];
+                    render();
+                    break;
+                }
+                case 'addInput': {
+                    cardsData[cardIndex].inputs.push({value: '', checked: true});
+                    render();
+                    break;
+                }
+                case 'copyInput': {
+                    const inputItem = target.closest('.input-item');
+                    if (!inputItem) return;
+                    const inputIndex = parseInt(inputItem.dataset.inputIndex, 10);
+                    if (isNaN(inputIndex)) return;
+                    const original = cardsData[cardIndex].inputs[inputIndex];
+                    cardsData[cardIndex].inputs.splice(inputIndex + 1, 0, {value: original.value, checked: original.checked});
+                    render();
+                    break;
+                }
+                case 'removeInput': {
+                    const inputItem = target.closest('.input-item');
+                    if (!inputItem) return;
+                    const inputIndex = parseInt(inputItem.dataset.inputIndex, 10);
+                    if (isNaN(inputIndex)) return;
+                    if (cardsData[cardIndex].inputs.length <= 1) return;
+                    cardsData[cardIndex].inputs.splice(inputIndex, 1);
+                    render();
+                    break;
+                }
+                case 'moveUp': {
+                    const inputItem = target.closest('.input-item');
+                    if (!inputItem) return;
+                    const inputIndex = parseInt(inputItem.dataset.inputIndex, 10);
+                    if (isNaN(inputIndex) || inputIndex === 0) return;
+                    const inputs = cardsData[cardIndex].inputs;
+                    [inputs[inputIndex - 1], inputs[inputIndex]] = [inputs[inputIndex], inputs[inputIndex - 1]];
+                    render();
+                    break;
+                }
+                case 'moveDown': {
+                    const inputItem = target.closest('.input-item');
+                    if (!inputItem) return;
+                    const inputIndex = parseInt(inputItem.dataset.inputIndex, 10);
+                    if (isNaN(inputIndex) || inputIndex === cardsData[cardIndex].inputs.length - 1) return;
+                    const inputs = cardsData[cardIndex].inputs;
+                    [inputs[inputIndex], inputs[inputIndex + 1]] = [inputs[inputIndex + 1], inputs[inputIndex]];
+                    render();
+                    break;
+                }
+                case 'moveCardUp': {
+                    if (cardIndex === 0) return;
+                    [cardsData[cardIndex - 1], cardsData[cardIndex]] = [cardsData[cardIndex], cardsData[cardIndex - 1]];
+                    [expandedStates[cardIndex - 1], expandedStates[cardIndex]] = [expandedStates[cardIndex], expandedStates[cardIndex - 1]];
+                    render();
+                    break;
+                }
+                case 'moveCardDown': {
+                    if (cardIndex === cardsData.length - 1) return;
+                    [cardsData[cardIndex + 1], cardsData[cardIndex]] = [cardsData[cardIndex], cardsData[cardIndex + 1]];
+                    [expandedStates[cardIndex + 1], expandedStates[cardIndex]] = [expandedStates[cardIndex], expandedStates[cardIndex + 1]];
+                    render();
+                    break;
+                }
+                case 'addCard': {
+                    const newTitle = getNextConditionTitle();
+                    const newCard = createCardData(newTitle);
+                    cardsData.push(newCard);
+                    expandedStates.push(true);
+                    render();
+                    break;
+                }
+                case 'copyCard': {
+                    const original = cardsData[cardIndex];
+                    const cloned = createCardData(
+                        original.title + ' (副本)',
+                        original.inputs.map(item => ({value: item.value, checked: item.checked}))
+                    );
+                    cardsData.splice(cardIndex + 1, 0, cloned);
+                    expandedStates.splice(cardIndex + 1, 0, true);
+                    render();
+                    break;
+                }
+                case 'removeCard': {
+                    if (cardsData.length <= 1) return;
+                    cardsData.splice(cardIndex, 1);
+                    expandedStates.splice(cardIndex, 1);
+                    render();
+                    break;
+                }
+                case 'resetCard': {
+                    cardsData[cardIndex].inputs = [{value:'', checked:true}, {value:'', checked:true}, {value:'', checked:true}];
+                    render();
+                    break;
+                }
+                case 'clearCard': {
+                    const inputs = cardsData[cardIndex].inputs;
+                    for (let i = 0; i < inputs.length; i++) {
+                        inputs[i].value = '';
+                    }
+                    render();
+                    break;
+                }
+                default: break;
+            }
+        });
+
+        // ---------- 结果列表事件 ----------
+        resultList.addEventListener('click', function(e) {
+            const target = e.target.closest('[data-action]');
+            if (!target) return;
+            const action = target.dataset.action;
+            const id = parseInt(target.dataset.id, 10);
+            if (isNaN(id)) return;
+
+            switch (action) {
+                case 'copyResult':
+                    copyResultWithIncrement(id);
+                    break;
+                case 'editResult':
+                    editingId = id;
+                    renderResults();
+                    break;
+                case 'saveResult':
+                    saveResult(id);
+                    break;
+                case 'cancelEdit':
+                    cancelEdit(id);
+                    break;
+                case 'moveResultUp':
+                    moveResultUp(id);
+                    break;
+                case 'moveResultDown':
+                    moveResultDown(id);
+                    break;
+                case 'deleteResult':
+                    deleteResult(id);
+                    break;
+                default: break;
+            }
+        });
+
+        // ---------- 全局按钮 ----------
+        document.getElementById('addCardBtnHeader').addEventListener('click', function() {
+            const newTitle = getNextConditionTitle();
+            const newCard = createCardData(newTitle);
+            cardsData.push(newCard);
+            expandedStates.push(true);
+            render();
+        });
+        document.getElementById('addCardBtnFooter').addEventListener('click', function() {
+            const newTitle = getNextConditionTitle();
+            const newCard = createCardData(newTitle);
+            cardsData.push(newCard);
+            expandedStates.push(true);
+            render();
+        });
+
+        document.getElementById('resetAllBtnHeader').addEventListener('click', resetAll);
+        document.getElementById('resetAllBtnFooter').addEventListener('click', resetAll);
+        document.getElementById('exampleBtn').addEventListener('click', loadExampleData);
+        document.getElementById('generateBtn').addEventListener('click', generateCombinations);
+
+        // 全选
+        const selectAllBtns = document.querySelectorAll('#selectAllBtn, #selectAllBtnBottom');
+        selectAllBtns.forEach(btn => {
+            btn.addEventListener('click', toggleSelectAll);
+        });
+
+        // 重新排序
+        const reorderBtns = document.querySelectorAll('#reorderBtn, #reorderBtnBottom');
+        reorderBtns.forEach(btn => {
+            btn.addEventListener('click', reorderFromSelected);
+        });
+
+        // 导出按钮
+        document.getElementById('exportExcelBtn').addEventListener('click', exportExcel);
+        document.getElementById('exportExcelBtnBottom').addEventListener('click', exportExcel);
+
+        document.getElementById('clearResultsBtn').addEventListener('click', clearResults);
+        document.getElementById('clearResultsBtnBottom').addEventListener('click', clearResults);
+        document.getElementById('deleteSelectedBtn').addEventListener('click', deleteSelected);
+        document.getElementById('deleteSelectedBtnBottom').addEventListener('click', deleteSelected);
+
+        // 初始化
+        resetAll();
+    })();
+</script>
+</body>
+</html>
