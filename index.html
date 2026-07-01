@@ -966,6 +966,26 @@
 				cursor: pointer;
 			}
 
+			/* 表格行拖拽样式 */
+			.main-row.dragging {
+				opacity: 0.4;
+				background: #e8f5ee;
+			}
+
+			.main-row.drag-over {
+				border: 2px dashed #3ba86d;
+				background: #d0ede0;
+			}
+
+			.drag-handle-row {
+				cursor: grab;
+				user-select: none;
+			}
+
+			.drag-handle-row:active {
+				cursor: grabbing;
+			}
+
 			.detail-row td {
 				padding: 12px 16px;
 				background: #f7faff;
@@ -1884,7 +1904,8 @@
 							});
 						}
 					} catch (e) {
-						/* ignore */ }
+						/* ignore */
+					}
 				}
 
 				function saveConfig() {
@@ -1898,7 +1919,8 @@
 						});
 						localStorage.setItem('testCaseFieldConfig_v2', JSON.stringify(toSave));
 					} catch (e) {
-						/* ignore */ }
+						/* ignore */
+					}
 				}
 
 				loadConfig();
@@ -2547,12 +2569,12 @@
 							bodyHtml += `<td>${escapeHtml(stepText)}</td><td>${escapeHtml(expectedText)}</td>`;
 						}
 						bodyHtml += `
-                        <td style="text-align:center;">
-                            <div class="action-group">
-                                <button class="btn-action edit" data-index="${index}" title="编辑">✎</button>
-                                <button class="btn-action delete" data-index="${index}" title="删除">✕</button>
-                            </div>
-                        </td>
+						  <td style="text-align:center;white-space:nowrap;">
+						    <span class="drag-handle-row" draggable="true" title="拖拽排序" style="cursor:grab;margin-right:6px;">☰</span>
+						    <button class="btn-action copy" data-index="${index}" title="复制">📋</button>
+						    <button class="btn-action edit" data-index="${index}" title="编辑">✎</button>
+						    <button class="btn-action delete" data-index="${index}" title="删除">✕</button>
+						  </td>					
                     </tr>`;
 
 						// 详情行
@@ -2597,7 +2619,7 @@
 					tableBody.querySelectorAll('.main-row').forEach(row => {
 						row.addEventListener('click', function(e) {
 							if (e.target.closest('.btn-action') || e.target.closest(
-								'input[type="checkbox"]')) return;
+									'input[type="checkbox"]')) return;
 							const index = this.dataset.index;
 							const detailRow = tableBody.querySelector(`.detail-row[data-index="${index}"]`);
 							if (detailRow) {
@@ -2621,6 +2643,95 @@
 							const idx = parseInt(this.getAttribute('data-index'), 10);
 							if (!isNaN(idx)) deleteRow(idx);
 						});
+					});
+
+					// 在 init 中（只绑定一次）：
+					tableBody.addEventListener('dragstart', function(e) {
+						const row = e.target.closest('tr.main-row');
+						if (!row) return;
+						// 只允许拖拽手柄触发
+						if (!e.target.classList.contains('drag-handle-row')) {
+							e.preventDefault();
+							return;
+						}
+						const index = row.dataset.index;
+						e.dataTransfer.setData('text/plain', index);
+						e.dataTransfer.effectAllowed = 'move';
+						row.classList.add('dragging');
+					});
+
+					tableBody.addEventListener('dragover', function(e) {
+						e.preventDefault();
+						e.dataTransfer.dropEffect = 'move';
+						const targetRow = e.target.closest('tr.main-row');
+						if (targetRow) {
+							// 高亮效果
+							tableBody.querySelectorAll('tr.main-row').forEach(r => r.classList.remove('drag-over'));
+							targetRow.classList.add('drag-over');
+						}
+					});
+
+					tableBody.addEventListener('dragleave', function(e) {
+						const targetRow = e.target.closest('tr.main-row');
+						if (targetRow) {
+							targetRow.classList.remove('drag-over');
+						}
+					});
+
+					tableBody.addEventListener('drop', function(e) {
+						e.preventDefault();
+						const targetRow = e.target.closest('tr.main-row');
+						if (!targetRow) return;
+						targetRow.classList.remove('drag-over');
+
+						const dragIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+						const dropIndex = parseInt(targetRow.dataset.index, 10);
+						if (isNaN(dragIndex) || isNaN(dropIndex) || dragIndex === dropIndex) return;
+
+						// 交换两个文档的 order 值
+						const dragRow = rows[dragIndex];
+						const dropRow = rows[dropIndex];
+						if (!dragRow || !dropRow) return;
+
+						const dragOrder = dragRow.order;
+						const dropOrder = dropRow.order;
+
+						// 批量更新两个文档的 order
+						const batch = db.batch();
+						const dragRef = db.collection('testcases').doc(dragRow.id);
+						const dropRef = db.collection('testcases').doc(dropRow.id);
+						batch.update(dragRef, {
+							order: dropOrder
+						});
+						batch.update(dropRef, {
+							order: dragOrder
+						});
+						batch.commit()
+							.then(() => {
+								showToast('顺序已更新', 'success');
+							})
+							.catch(err => {
+								showToast('排序失败：' + err.message, 'error');
+							});
+					});
+
+					tableBody.addEventListener('dragend', function(e) {
+						const row = e.target.closest('tr.main-row');
+						if (row) row.classList.remove('dragging');
+						tableBody.querySelectorAll('tr.main-row.drag-over').forEach(r => r.classList.remove(
+							'drag-over'));
+					});
+
+					// 在 init 中添加委托事件
+					tableBody.addEventListener('click', function(e) {
+						const copyBtn = e.target.closest('.copy');
+						if (copyBtn) {
+							const index = parseInt(copyBtn.dataset.index, 10);
+							if (!isNaN(index)) copyRow(index);
+							return;
+						}
+						// 原有的编辑、删除事件仍在各自按钮上已有绑定，但也可以统一委托
+						// 为了兼容，保留原来的单独绑定
 					});
 
 					// 更新全选状态
@@ -2707,6 +2818,36 @@
 						});
 				}
 
+				// 复制选中
+				function copyRow(index) {
+					if (index < 0 || index >= rows.length) return;
+					const source = rows[index];
+
+					// 深拷贝数据（不包含 id 和 order）
+					const newData = {
+						title: source.title,
+						precondition: source.precondition,
+						priority: source.priority,
+						remark: source.remark,
+						levels: [...source.levels],
+						steps: source.steps.map(s => ({
+							step: s.step,
+							expected: s.expected
+						})),
+						order: rows.reduce((max, r) => Math.max(max, r.order || 0), 0) + 1,
+						createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+						updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+					};
+
+					db.collection('testcases').add(newData)
+						.then(() => {
+							showToast(`已复制「${source.title}」`, 'success');
+						})
+						.catch(err => {
+							showToast('复制失败：' + err.message, 'error');
+						});
+				}
+
 				// ---------- 数据 ----------
 				let rows = [];
 
@@ -2727,6 +2868,7 @@
 						remark: base.remark || '',
 						levels: levels,
 						steps: validSteps,
+						order: maxOrder + 1, // 新增
 						createdAt: firebase.firestore.FieldValue.serverTimestamp(),
 						updatedAt: firebase.firestore.FieldValue.serverTimestamp()
 					};
@@ -3258,6 +3400,28 @@
 						renderSteps(vals);
 					}
 					showToast(`✅ 已添加 ${demos.length} 条示例用例`, 'success');
+					// ... 原有 demos 数组 ...
+					if (rows.length > 0 && !confirm('追加示例数据？')) return;
+
+					const baseOrder = rows.reduce((max, r) => Math.max(max, r.order || 0), 0);
+					demos.forEach((d, index) => {
+						const newData = {
+							title: d.title,
+							precondition: d.precondition || '',
+							levels: d.levels || [],
+							steps: d.steps.map(s => ({
+								step: s.step,
+								expected: s.expected
+							})),
+							priority: d.priority || '',
+							remark: d.remark || '',
+							order: baseOrder + index + 1,
+							createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+							updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+						};
+						db.collection('testcases').add(newData);
+					});
+					showToast(`✅ 添加 ${demos.length} 条示例`, 'success');
 				}
 				// ---------- 从 Firestore 实时同步数据 ----------
 				function startDataSync() {
@@ -3267,13 +3431,14 @@
 
 					// 监听 testcases 集合（按创建时间升序）
 					unsubscribe = db.collection('testcases')
-						.orderBy('createdAt', 'asc')
+						.orderBy('order', 'asc')
 						.onSnapshot((snapshot) => {
 							rows = []; // 清空并重新填充
 							snapshot.forEach((doc) => {
 								const data = doc.data();
 								rows.push({
 									id: doc.id, // ★ 保存文档 ID 用于更新/删除
+									order: data.order || 0, // 保存 order
 									title: data.title || '',
 									precondition: data.precondition || '',
 									priority: data.priority || 'P0',
@@ -3291,114 +3456,118 @@
 
 				// ---------- 初始化函数（整合 Firebase 登录 + UI 初始化） ----------
 				// ---------- 初始化函数（事件绑定与登录分离） ----------
-function init() {
-  // 1. 先执行所有 UI 渲染和事件绑定（不依赖 Firebase）
-  applyFieldLabels();
-  renderLevels(Array(levelCount).fill(''));
-  renderSteps(Array(stepCount).fill({ step: '', expected: '' }));
-  initDragDrop();
-  bindCheckAll();
+				function init() {
+					// 1. 先执行所有 UI 渲染和事件绑定（不依赖 Firebase）
+					applyFieldLabels();
+					renderLevels(Array(levelCount).fill(''));
+					renderSteps(Array(stepCount).fill({
+						step: '',
+						expected: ''
+					}));
+					initDragDrop();
+					bindCheckAll();
 
-  // 2. 绑定所有按钮事件（这些都会被执行，无论登录状态）
-  // 阶层折叠
-  levelsToggleHeader.addEventListener('click', toggleLevels);
-  editLevelsTitle.addEventListener('click', function(e) {
-    e.stopPropagation();
-    openEditLevels();
-  });
+					// 2. 绑定所有按钮事件（这些都会被执行，无论登录状态）
+					// 阶层折叠
+					levelsToggleHeader.addEventListener('click', toggleLevels);
+					editLevelsTitle.addEventListener('click', function(e) {
+						e.stopPropagation();
+						openEditLevels();
+					});
 
-  // 阶层编辑模态框
-  editLevelsCancel.addEventListener('click', closeEditLevels);
-  editLevelsOverlay.addEventListener('click', function(e) {
-    if (e.target === editLevelsOverlay) closeEditLevels();
-  });
-  editLevelsSave.addEventListener('click', saveEditLevels);
-  editLevelsAddBtn.addEventListener('click', editLevelsAddRow);
-  editLevelsRemoveBtn.addEventListener('click', editLevelsRemoveLastRow);
+					// 阶层编辑模态框
+					editLevelsCancel.addEventListener('click', closeEditLevels);
+					editLevelsOverlay.addEventListener('click', function(e) {
+						if (e.target === editLevelsOverlay) closeEditLevels();
+					});
+					editLevelsSave.addEventListener('click', saveEditLevels);
+					editLevelsAddBtn.addEventListener('click', editLevelsAddRow);
+					editLevelsRemoveBtn.addEventListener('click', editLevelsRemoveLastRow);
 
-  // 阶层增删
-  addLevelBtn.addEventListener('click', addLevel);
-  removeLevelBtn.addEventListener('click', removeLastLevel);
+					// 阶层增删
+					addLevelBtn.addEventListener('click', addLevel);
+					removeLevelBtn.addEventListener('click', removeLastLevel);
 
-  // 字段标签编辑
-  document.querySelectorAll('.edit-icon[data-target]').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      const target = this.getAttribute('data-target');
-      openModal(target);
-    });
-  });
-  document.getElementById('editSectionTitle').addEventListener('click', function() {
-    openModal('sectionTitle');
-  });
+					// 字段标签编辑
+					document.querySelectorAll('.edit-icon[data-target]').forEach(btn => {
+						btn.addEventListener('click', function(e) {
+							const target = this.getAttribute('data-target');
+							openModal(target);
+						});
+					});
+					document.getElementById('editSectionTitle').addEventListener('click', function() {
+						openModal('sectionTitle');
+					});
 
-  // 模态框
-  modalConfirm.addEventListener('click', confirmModal);
-  modalCancel.addEventListener('click', closeModal);
-  modalOverlay.addEventListener('click', function(e) {
-    if (e.target === modalOverlay) closeModal();
-  });
-  modalLabel.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') confirmModal();
-  });
-  modalDefault.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') confirmModal();
-  });
+					// 模态框
+					modalConfirm.addEventListener('click', confirmModal);
+					modalCancel.addEventListener('click', closeModal);
+					modalOverlay.addEventListener('click', function(e) {
+						if (e.target === modalOverlay) closeModal();
+					});
+					modalLabel.addEventListener('keydown', function(e) {
+						if (e.key === 'Enter') confirmModal();
+					});
+					modalDefault.addEventListener('keydown', function(e) {
+						if (e.key === 'Enter') confirmModal();
+					});
 
-  // 编辑用例模态框
-  editCaseSave.addEventListener('click', saveEditCase);
-  editCaseCancel.addEventListener('click', closeEditCase);
-  editOverlay.addEventListener('click', function(e) {
-    if (e.target === editOverlay) closeEditCase();
-  });
-  editAddStep.addEventListener('click', editAddStepHandler);
-  editCaseLevelAddBtn.addEventListener('click', editCaseLevelAdd);
-  editCaseLevelRemoveBtn.addEventListener('click', editCaseLevelRemoveLast);
+					// 编辑用例模态框
+					editCaseSave.addEventListener('click', saveEditCase);
+					editCaseCancel.addEventListener('click', closeEditCase);
+					editOverlay.addEventListener('click', function(e) {
+						if (e.target === editOverlay) closeEditCase();
+					});
+					editAddStep.addEventListener('click', editAddStepHandler);
+					editCaseLevelAddBtn.addEventListener('click', editCaseLevelAdd);
+					editCaseLevelRemoveBtn.addEventListener('click', editCaseLevelRemoveLast);
 
-  // 主按钮
-  btnAdd.addEventListener('click', addRow);
-  btnReset.addEventListener('click', resetInputs);
-  btnFillDemo.addEventListener('click', fillDemo);
-  btnExportTop.addEventListener('click', exportExcel);
-  btnExportBottom.addEventListener('click', exportExcel);
+					// 主按钮
+					btnAdd.addEventListener('click', addRow);
+					btnReset.addEventListener('click', resetInputs);
+					btnFillDemo.addEventListener('click', fillDemo);
+					btnExportTop.addEventListener('click', exportExcel);
+					btnExportBottom.addEventListener('click', exportExcel);
 
-  // 步骤按钮
-  addStepBtn.addEventListener('click', addStep);
-  removeStepBtn.addEventListener('click', removeLastStep);
-  addStepBtnBottom.addEventListener('click', addStep);
-  removeStepBtnBottom.addEventListener('click', removeLastStep);
+					// 步骤按钮
+					addStepBtn.addEventListener('click', addStep);
+					removeStepBtn.addEventListener('click', removeLastStep);
+					addStepBtnBottom.addEventListener('click', addStep);
+					removeStepBtnBottom.addEventListener('click', removeLastStep);
 
-  // 表格工具栏
-  deleteSelected.addEventListener('click', deleteSelectedRows);
-  clearAllCases.addEventListener('click', clearAllCasesHandler);
+					// 表格工具栏
+					deleteSelected.addEventListener('click', deleteSelectedRows);
+					clearAllCases.addEventListener('click', clearAllCasesHandler);
 
-  // 输入框按 Enter 触发添加
-  document.querySelectorAll('.input-group input, .input-group textarea, .input-group select').forEach(el => {
-    el.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
-        e.preventDefault();
-        addRow();
-      }
-    });
-  });
+					// 输入框按 Enter 触发添加
+					document.querySelectorAll('.input-group input, .input-group textarea, .input-group select').forEach(
+					el => {
+						el.addEventListener('keydown', function(e) {
+							if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+								e.preventDefault();
+								addRow();
+							}
+						});
+					});
 
-  // 3. 首次渲染表格（此时 rows 为空，稍后由 Firebase 填充）
-  renderTable();
-  titleInput.focus();
+					// 3. 首次渲染表格（此时 rows 为空，稍后由 Firebase 填充）
+					renderTable();
+					titleInput.focus();
 
-  // 4. 然后尝试登录 Firebase（不影响界面交互）
-  auth.signInAnonymously()
-    .then(() => {
-      console.log('✅ Firebase 匿名登录成功');
-      // 登录成功后启动数据监听
-      startDataSync();
-      showToast('已连接云端，数据实时同步', 'success');
-    })
-    .catch((err) => {
-      console.error('❌ Firebase 登录失败', err);
-      showToast('无法连接数据库，数据将保存在本地（刷新后丢失）', 'error');
-      // 可降级为本地模式（根据需要，此处留空）
-    });
-}
+					// 4. 然后尝试登录 Firebase（不影响界面交互）
+					auth.signInAnonymously()
+						.then(() => {
+							console.log('✅ Firebase 匿名登录成功');
+							// 登录成功后启动数据监听
+							startDataSync();
+							showToast('已连接云端，数据实时同步', 'success');
+						})
+						.catch((err) => {
+							console.error('❌ Firebase 登录失败', err);
+							showToast('无法连接数据库，数据将保存在本地（刷新后丢失）', 'error');
+							// 可降级为本地模式（根据需要，此处留空）
+						});
+				}
 				if (document.readyState === 'loading') {
 					document.addEventListener('DOMContentLoaded', init);
 				} else {
