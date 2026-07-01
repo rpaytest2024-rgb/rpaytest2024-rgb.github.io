@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parten-V1.0 · 动态区域管理（实时同步）</title>
+    <title>Parten-V1.2 · 组合结果实时同步</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -114,6 +114,7 @@
         .result-edit-actions .btn-sm.danger:hover { background: #fee2e2; }
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; max-width: 80%; text-align: center; }
         .toast.show { opacity: 1; }
+        .sync-status { font-size: 13px; color: #64748b; background: #eef2f8; padding: 2px 12px; border-radius: 20px; display: inline-block; }
         @media (max-width: 640px) {
             .app-header { flex-direction: column; align-items: stretch; }
             .app-header .header-actions { justify-content: flex-start; }
@@ -136,18 +137,18 @@
 <body>
 <div class="app">
     <div class="app-header">
-        <h1>📋 Parten-V1.0 <span style="font-size:14px;font-weight:400;color:#94a3b8;">(实时同步)</span></h1>
+        <h1>📋 Parten-V1.0 <span class="sync-status" id="syncStatus">● 实时同步</span></h1>
         <div class="header-actions">
             <button class="btn-add-card" id="addCardBtnHeader">＋ 添加新区域</button>
-            <button class="btn-add-card reset-btn" id="resetAllBtnHeader">↺ 重置</button>
+            <button class="btn-add-card reset-btn" id="resetAllBtnHeader">↺ 重置卡片</button>
         </div>
     </div>
     <div class="cards-wrapper" id="cardsContainer"></div>
     <div class="global-actions">
         <div class="left-actions">
             <button class="btn-add-card" id="addCardBtnFooter">＋ 添加新区域</button>
-            <button class="btn-add-card reset-btn" id="resetAllBtnFooter">↺ 重置</button>
-            <button class="btn-add-card example-btn" id="exampleBtn">📋 示例数据</button>
+            <button class="btn-add-card reset-btn" id="resetAllBtnFooter">↺ 重置卡片</button>
+            <button class="btn-add-card example-btn" id="exampleBtn">📋 示例卡片</button>
         </div>
         <div class="right-actions">
             <button class="btn-add-card generate-btn" id="generateBtn">⚡ 生成</button>
@@ -164,7 +165,7 @@
                 <button class="btn-sm" id="reorderBtn" disabled>↺ 重新排序</button>
                 <button class="btn-sm danger" id="clearResultsBtn">✕ 清空</button>
                 <button class="btn-sm danger" id="deleteSelectedBtn">✕ 删除选中</button>
-                <button class="btn-sm primary" id="exportExcelBtn">📊 导出Excel</button>
+                <button class="btn-sm primary" id="exportExcelBtn">📊 导出CSV</button>
             </div>
         </div>
         <div class="result-list" id="resultList"></div>
@@ -173,7 +174,7 @@
             <button class="btn-sm" id="reorderBtnBottom" disabled>↺ 重新排序</button>
             <button class="btn-sm danger" id="clearResultsBtnBottom">✕ 清空</button>
             <button class="btn-sm danger" id="deleteSelectedBtnBottom">✕ 删除选中</button>
-            <button class="btn-sm primary" id="exportExcelBtnBottom">📊 导出Excel</button>
+            <button class="btn-sm primary" id="exportExcelBtnBottom">📊 导出CSV</button>
         </div>
     </div>
 </div>
@@ -184,7 +185,7 @@
     (function() {
         'use strict';
 
-        // ---------- Firebase 配置（与 index 一致） ----------
+        // ---------- Firebase 配置 ----------
         const firebaseConfig = {
             apiKey: "AIzaSyCVvm-A_5xhTn1Yx7mcN0kIc1FJrBnaES4",
             authDomain: "testcase-29c96.firebaseapp.com",
@@ -200,21 +201,24 @@
         const auth = firebase.auth();
 
         // ---------- 全局状态 ----------
+        // 卡片配置（不同步）
         let cardsData = [];
         let expandedStates = [];
         let prefixInputs = ['', ''];
         let prefixTitle = '标题前缀';
+
+        // 结果数据（同步）
         let results = [];
         let nextId = 1;
         let editingId = null;
-        let isLocalUpdate = false;  // 防止监听触发二次渲染循环
+        let isLocalUpdate = false; // 防止监听循环
 
-        // DOM 引用
         const container = document.getElementById('cardsContainer');
         const resultList = document.getElementById('resultList');
         const resultCount = document.getElementById('resultCount');
         const reorderBtn = document.getElementById('reorderBtn');
         const reorderBtnBottom = document.getElementById('reorderBtnBottom');
+        const syncStatus = document.getElementById('syncStatus');
         const toastEl = document.getElementById('toast');
         let toastTimer = null;
 
@@ -278,78 +282,52 @@
             return { title, inputs };
         }
 
-        // ---------- 获取当前完整配置对象 ----------
+        // ---------- 结果数据与Firebase交互 ----------
         function getConfigObject() {
-            return {
-                cardsData: cardsData,
-                expandedStates: expandedStates,
-                prefixInputs: prefixInputs,
-                prefixTitle: prefixTitle,
-                results: results,
-                nextId: nextId,
-                editingId: editingId
-            };
+            return { results, nextId };
         }
 
-        // ---------- 保存到 Firestore ----------
         function saveConfigToFirebase() {
-            if (isLocalUpdate) return; // 防止循环
-            const config = getConfigObject();
-            db.collection('parten_config').doc('main').set(config, { merge: true })
+            if (isLocalUpdate) return;
+            isLocalUpdate = true;
+            const data = getConfigObject();
+            db.collection('parten_config').doc('main').set(data, { merge: true })
                 .catch(err => {
                     console.error('保存失败:', err);
                     showToast('保存失败，请检查网络', 3000);
+                })
+                .finally(() => {
+                    isLocalUpdate = false;
                 });
         }
 
-        // ---------- 从 Firestore 加载配置 ----------
         function loadConfigFromFirebase(snapshot) {
             if (!snapshot.exists) {
-                // 文档不存在，使用默认数据并创建
-                resetAllLocal();
+                // 首次使用，创建空结果
+                results = [];
+                nextId = 1;
+                editingId = null;
+                renderResults();
+                updateReorderButton();
                 saveConfigToFirebase();
                 return;
             }
             const data = snapshot.data();
-            // 更新本地数据
-            cardsData = data.cardsData || [];
-            expandedStates = data.expandedStates || [];
-            prefixInputs = data.prefixInputs || ['', ''];
-            prefixTitle = data.prefixTitle || '标题前缀';
             results = data.results || [];
             nextId = data.nextId || 1;
-            editingId = data.editingId || null;
-            // 渲染界面
-            render();
+            editingId = null; // 确保编辑状态清除
             renderResults();
             updateReorderButton();
         }
 
-        // ---------- 重置本地数据（不保存） ----------
-        const INITIAL_DATA = [
-            { title: '前提条件', inputs: [{value:'', checked:true}, {value:'', checked:true}, {value:'', checked:true}] },
-            { title: '条件1', inputs: [{value:'', checked:true}, {value:'', checked:true}, {value:'', checked:true}] }
-        ];
-        const INITIAL_EXPANDED = [true, true];
-
-        function resetAllLocal() {
-            cardsData = INITIAL_DATA.map(card => createCardData(card.title, card.inputs.map(inp => ({value: inp.value, checked: true}))));
-            expandedStates = INITIAL_EXPANDED.slice();
-            prefixInputs = ['', ''];
-            prefixTitle = '标题前缀';
-            results = [];
-            nextId = 1;
-            editingId = null;
-        }
-
-        // ---------- 渲染（卡片 + 前缀） ----------
+        // ---------- 卡片渲染（本地，不同步） ----------
         function render() {
             while (expandedStates.length < cardsData.length) expandedStates.push(false);
             while (expandedStates.length > cardsData.length) expandedStates.pop();
 
             let html = '';
 
-            // 固定卡片
+            // 固定卡片：前缀设置
             let prefixHtml = '';
             prefixHtml += `<div class="prefix-rows">`;
             prefixInputs.forEach((val, idx) => {
@@ -457,7 +435,7 @@
 
             container.innerHTML = html;
 
-            // 绑定前缀输入事件
+            // 绑定前缀输入事件（不保存到云端）
             document.querySelectorAll('.prefix-input').forEach(input => {
                 input.addEventListener('input', function() {
                     const idx = parseInt(this.dataset.prefixIndex, 10);
@@ -468,24 +446,22 @@
                             this.value = value;
                         }
                         prefixInputs[idx] = value;
-                        saveConfigToFirebase();
                     }
                 });
             });
 
-            // 标题编辑（前缀）
+            // 前缀标题编辑（不保存到云端）
             const titleEl = document.querySelector('.fixed-card .title[contenteditable]');
             if (titleEl) {
                 titleEl.addEventListener('input', function() {
                     prefixTitle = this.textContent.trim() || '标题前缀';
-                    saveConfigToFirebase();
                 });
                 titleEl.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
                 });
             }
 
-            // 普通卡片的输入框内容同步
+            // 普通卡片输入框内容同步（不保存）
             document.querySelectorAll('.input-item .text-input').forEach(input => {
                 input.addEventListener('input', function() {
                     const item = this.closest('.input-item');
@@ -494,35 +470,32 @@
                     const inputIndex = parseInt(item.dataset.inputIndex, 10);
                     if (isNaN(cardIndex) || isNaN(inputIndex)) return;
                     cardsData[cardIndex].inputs[inputIndex].value = this.value;
-                    saveConfigToFirebase();
                 });
             });
 
-            // 行checkbox事件
+            // 行checkbox（不保存）
             document.querySelectorAll('.input-item .input-checkbox').forEach(cb => {
                 cb.addEventListener('change', function() {
                     const cardIndex = parseInt(this.dataset.cardIndex, 10);
                     const inputIndex = parseInt(this.dataset.inputIndex, 10);
                     if (isNaN(cardIndex) || isNaN(inputIndex)) return;
                     cardsData[cardIndex].inputs[inputIndex].checked = this.checked;
-                    saveConfigToFirebase();
-                    render();
+                    render(); // 刷新以更新全选状态
                 });
             });
 
-            // 大区域checkbox事件
+            // 大区域checkbox（不保存）
             document.querySelectorAll('.card .card-checkbox').forEach(cb => {
                 cb.addEventListener('change', function() {
                     const cardIndex = parseInt(this.dataset.cardIndex, 10);
                     if (isNaN(cardIndex)) return;
                     const checked = this.checked;
                     cardsData[cardIndex].inputs.forEach(item => item.checked = checked);
-                    saveConfigToFirebase();
                     render();
                 });
             });
 
-            // 卡片标题编辑（普通卡片）
+            // 卡片标题编辑（不保存）
             document.querySelectorAll('.card:not(.fixed-card) .title[contenteditable]').forEach(el => {
                 el.addEventListener('input', function() {
                     const cardEl = this.closest('.card');
@@ -530,7 +503,6 @@
                     const index = parseInt(cardEl.dataset.cardIndex, 10);
                     if (isNaN(index)) return;
                     cardsData[index].title = this.textContent.trim() || '未命名区域';
-                    saveConfigToFirebase();
                 });
                 el.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
@@ -538,11 +510,11 @@
             });
         }
 
-        // ---------- 渲染结果 ----------
+        // ---------- 结果渲染（含编辑状态） ----------
         function renderResults() {
             resultCount.textContent = results.length ? `共 ${results.length} 条` : '';
             if (results.length === 0) {
-                resultList.innerHTML = `<div class="empty-message">暂无组合结果，请点击“生成”或加载示例数据</div>`;
+                resultList.innerHTML = `<div class="empty-message">暂无组合结果，请点击“生成”或加载示例卡片后生成</div>`;
                 reorderBtn.disabled = true;
                 reorderBtnBottom.disabled = true;
                 return;
@@ -593,7 +565,7 @@
             });
             resultList.innerHTML = html;
 
-            // 绑定checkbox事件
+            // 结果checkbox事件 -> 保存
             document.querySelectorAll('.result-checkbox').forEach(cb => {
                 cb.addEventListener('change', function(e) {
                     const id = parseInt(this.dataset.id, 10);
@@ -630,7 +602,7 @@
             reorderBtnBottom.disabled = !enabled;
         }
 
-        // ---------- 结果操作函数（带保存） ----------
+        // ---------- 结果操作（自动保存） ----------
         function saveResult(id) {
             const input = document.getElementById(`edit-input-${id}`);
             if (!input) return;
@@ -657,7 +629,7 @@
         function cancelEdit(id) {
             editingId = null;
             renderResults();
-            saveConfigToFirebase();
+            saveConfigToFirebase(); // 取消时也保存，清除编辑状态
         }
 
         function copyResultWithIncrement(id) {
@@ -918,13 +890,25 @@
             return null;
         }
 
-        // ---------- 重置与示例 ----------
+        // ---------- 重置与示例卡片（不影响结果） ----------
+        const INITIAL_DATA = [
+            { title: '前提条件', inputs: [{value:'', checked:true}, {value:'', checked:true}, {value:'', checked:true}] },
+            { title: '条件1', inputs: [{value:'', checked:true}, {value:'', checked:true}, {value:'', checked:true}] }
+        ];
+        const INITIAL_EXPANDED = [true, true];
+
+        function resetAllLocal() {
+            cardsData = INITIAL_DATA.map(card => createCardData(card.title, card.inputs.map(inp => ({value: inp.value, checked: true}))));
+            expandedStates = INITIAL_EXPANDED.slice();
+            prefixInputs = ['', ''];
+            prefixTitle = '标题前缀';
+            // 不修改 results, nextId
+        }
+
         function resetAll() {
             resetAllLocal();
             render();
-            renderResults();
-            saveConfigToFirebase();
-            showToast('已重置', 1000);
+            showToast('卡片已重置', 1000);
         }
 
         function loadExampleData() {
@@ -935,16 +919,11 @@
             expandedStates = [true, true];
             prefixInputs = ['C', '001'];
             prefixTitle = '标题前缀';
-            results = [];
-            nextId = 1;
-            editingId = null;
             render();
-            renderResults();
-            saveConfigToFirebase();
-            showToast('示例数据已加载', 1500);
+            showToast('示例卡片已加载', 1500);
         }
 
-        // ---------- 导出 Excel ----------
+        // ---------- 导出CSV ----------
         function exportExcel() {
             try {
                 if (results.length === 0) {
@@ -988,7 +967,7 @@
             }
         }
 
-        // ---------- 事件委托（卡片操作） ----------
+        // ---------- 事件委托（卡片操作，不保存） ----------
         container.addEventListener('click', function(e) {
             const target = e.target.closest('[data-action]');
             if (!target) return;
@@ -996,13 +975,12 @@
 
             if (target.closest('.fixed-card')) {
                 switch (action) {
-                    case 'addPrefix': { prefixInputs.push(''); render(); saveConfigToFirebase(); break; }
+                    case 'addPrefix': { prefixInputs.push(''); render(); break; }
                     case 'removePrefix': {
                         const idx = parseInt(target.dataset.prefixIndex, 10);
                         if (isNaN(idx) || idx < 2 || prefixInputs.length <= 2) return;
                         prefixInputs.splice(idx, 1);
                         render();
-                        saveConfigToFirebase();
                         break;
                     }
                     default: break;
@@ -1021,13 +999,11 @@
                 case 'toggleCard': {
                     expandedStates[cardIndex] = !expandedStates[cardIndex];
                     render();
-                    saveConfigToFirebase();
                     break;
                 }
                 case 'addInput': {
                     cardsData[cardIndex].inputs.push({value: '', checked: true});
                     render();
-                    saveConfigToFirebase();
                     break;
                 }
                 case 'copyInput': {
@@ -1038,7 +1014,6 @@
                     const original = cardsData[cardIndex].inputs[inputIndex];
                     cardsData[cardIndex].inputs.splice(inputIndex + 1, 0, {value: original.value, checked: original.checked});
                     render();
-                    saveConfigToFirebase();
                     break;
                 }
                 case 'removeInput': {
@@ -1049,7 +1024,6 @@
                     if (cardsData[cardIndex].inputs.length <= 1) return;
                     cardsData[cardIndex].inputs.splice(inputIndex, 1);
                     render();
-                    saveConfigToFirebase();
                     break;
                 }
                 case 'moveUp': {
@@ -1060,7 +1034,6 @@
                     const inputs = cardsData[cardIndex].inputs;
                     [inputs[inputIndex - 1], inputs[inputIndex]] = [inputs[inputIndex], inputs[inputIndex - 1]];
                     render();
-                    saveConfigToFirebase();
                     break;
                 }
                 case 'moveDown': {
@@ -1071,7 +1044,6 @@
                     const inputs = cardsData[cardIndex].inputs;
                     [inputs[inputIndex], inputs[inputIndex + 1]] = [inputs[inputIndex + 1], inputs[inputIndex]];
                     render();
-                    saveConfigToFirebase();
                     break;
                 }
                 case 'moveCardUp': {
@@ -1079,7 +1051,6 @@
                     [cardsData[cardIndex - 1], cardsData[cardIndex]] = [cardsData[cardIndex], cardsData[cardIndex - 1]];
                     [expandedStates[cardIndex - 1], expandedStates[cardIndex]] = [expandedStates[cardIndex], expandedStates[cardIndex - 1]];
                     render();
-                    saveConfigToFirebase();
                     break;
                 }
                 case 'moveCardDown': {
@@ -1087,7 +1058,6 @@
                     [cardsData[cardIndex + 1], cardsData[cardIndex]] = [cardsData[cardIndex], cardsData[cardIndex + 1]];
                     [expandedStates[cardIndex + 1], expandedStates[cardIndex]] = [expandedStates[cardIndex], expandedStates[cardIndex + 1]];
                     render();
-                    saveConfigToFirebase();
                     break;
                 }
                 case 'addCard': {
@@ -1096,7 +1066,6 @@
                     cardsData.push(newCard);
                     expandedStates.push(true);
                     render();
-                    saveConfigToFirebase();
                     break;
                 }
                 case 'copyCard': {
@@ -1108,7 +1077,6 @@
                     cardsData.splice(cardIndex + 1, 0, cloned);
                     expandedStates.splice(cardIndex + 1, 0, true);
                     render();
-                    saveConfigToFirebase();
                     break;
                 }
                 case 'removeCard': {
@@ -1116,13 +1084,11 @@
                     cardsData.splice(cardIndex, 1);
                     expandedStates.splice(cardIndex, 1);
                     render();
-                    saveConfigToFirebase();
                     break;
                 }
                 case 'resetCard': {
                     cardsData[cardIndex].inputs = [{value:'', checked:true}, {value:'', checked:true}, {value:'', checked:true}];
                     render();
-                    saveConfigToFirebase();
                     break;
                 }
                 case 'clearCard': {
@@ -1131,7 +1097,6 @@
                         inputs[i].value = '';
                     }
                     render();
-                    saveConfigToFirebase();
                     break;
                 }
                 default: break;
@@ -1180,7 +1145,6 @@
             cardsData.push(newCard);
             expandedStates.push(true);
             render();
-            saveConfigToFirebase();
         });
         document.getElementById('addCardBtnFooter').addEventListener('click', function() {
             const newTitle = getNextConditionTitle();
@@ -1188,7 +1152,6 @@
             cardsData.push(newCard);
             expandedStates.push(true);
             render();
-            saveConfigToFirebase();
         });
 
         document.getElementById('resetAllBtnHeader').addEventListener('click', resetAll);
@@ -1196,22 +1159,18 @@
         document.getElementById('exampleBtn').addEventListener('click', loadExampleData);
         document.getElementById('generateBtn').addEventListener('click', generateCombinations);
 
-        // 全选
         const selectAllBtns = document.querySelectorAll('#selectAllBtn, #selectAllBtnBottom');
         selectAllBtns.forEach(btn => {
             btn.addEventListener('click', toggleSelectAll);
         });
 
-        // 重新排序
         const reorderBtns = document.querySelectorAll('#reorderBtn, #reorderBtnBottom');
         reorderBtns.forEach(btn => {
             btn.addEventListener('click', reorderFromSelected);
         });
 
-        // 导出
         document.getElementById('exportExcelBtn').addEventListener('click', exportExcel);
         document.getElementById('exportExcelBtnBottom').addEventListener('click', exportExcel);
-
         document.getElementById('clearResultsBtn').addEventListener('click', clearResults);
         document.getElementById('clearResultsBtnBottom').addEventListener('click', clearResults);
         document.getElementById('deleteSelectedBtn').addEventListener('click', deleteSelected);
@@ -1221,36 +1180,48 @@
         function initFirebase() {
             auth.signInAnonymously()
                 .then(() => {
-                    console.log('✅ Parten: 匿名登录成功');
-                    // 监听配置文档
+                    syncStatus.textContent = '● 已连接';
+                    syncStatus.style.color = '#2b7a4b';
                     const docRef = db.collection('parten_config').doc('main');
                     docRef.onSnapshot((snapshot) => {
-                        if (isLocalUpdate) return; // 避免循环
+                        if (isLocalUpdate) return;
                         if (snapshot.exists) {
                             loadConfigFromFirebase(snapshot);
                         } else {
-                            // 首次使用，创建默认配置
-                            resetAllLocal();
-                            render();
+                            // 首次使用，创建空结果
+                            results = [];
+                            nextId = 1;
+                            editingId = null;
                             renderResults();
+                            updateReorderButton();
                             saveConfigToFirebase();
                         }
                     }, (error) => {
                         console.error('监听失败:', error);
+                        syncStatus.textContent = '● 离线';
+                        syncStatus.style.color = '#b91c1c';
                         showToast('数据同步失败，请检查网络', 3000);
                     });
                 })
                 .catch((err) => {
                     console.error('❌ 登录失败:', err);
-                    showToast('无法连接云端，数据不会同步', 3000);
-                    // 降级：使用本地默认数据
-                    resetAllLocal();
-                    render();
+                    syncStatus.textContent = '● 离线';
+                    syncStatus.style.color = '#b91c1c';
+                    showToast('无法连接云端，结果不会同步', 3000);
+                    // 降级：使用本地默认
+                    results = [];
+                    nextId = 1;
                     renderResults();
+                    updateReorderButton();
                 });
         }
 
         // ---------- 启动 ----------
+        // 先渲染空卡片，等待Firebase数据填充结果
+        resetAllLocal();
+        render();
+        renderResults();
+        updateReorderButton();
         initFirebase();
 
     })();
