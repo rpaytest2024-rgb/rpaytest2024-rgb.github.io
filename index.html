@@ -3290,144 +3290,115 @@
 				}
 
 				// ---------- 初始化函数（整合 Firebase 登录 + UI 初始化） ----------
-				function init() {
-					// 1. 匿名登录 Firebase
-					auth.signInAnonymously()
-						.then(() => {
-							console.log('✅ Firebase 匿名登录成功');
+				// ---------- 初始化函数（事件绑定与登录分离） ----------
+function init() {
+  // 1. 先执行所有 UI 渲染和事件绑定（不依赖 Firebase）
+  applyFieldLabels();
+  renderLevels(Array(levelCount).fill(''));
+  renderSteps(Array(stepCount).fill({ step: '', expected: '' }));
+  initDragDrop();
+  bindCheckAll();
 
-							// 2. 启动数据实时同步
-							startDataSync();
+  // 2. 绑定所有按钮事件（这些都会被执行，无论登录状态）
+  // 阶层折叠
+  levelsToggleHeader.addEventListener('click', toggleLevels);
+  editLevelsTitle.addEventListener('click', function(e) {
+    e.stopPropagation();
+    openEditLevels();
+  });
 
-							// 3. 初始化 UI（所有界面渲染和事件绑定）
-							applyFieldLabels(); // 应用字段标签
-							renderLevels(Array(levelCount).fill('')); // 渲染默认层级
-							renderSteps(Array(stepCount).fill({
-								step: '',
-								expected: ''
-							})); // 渲染默认步骤
+  // 阶层编辑模态框
+  editLevelsCancel.addEventListener('click', closeEditLevels);
+  editLevelsOverlay.addEventListener('click', function(e) {
+    if (e.target === editLevelsOverlay) closeEditLevels();
+  });
+  editLevelsSave.addEventListener('click', saveEditLevels);
+  editLevelsAddBtn.addEventListener('click', editLevelsAddRow);
+  editLevelsRemoveBtn.addEventListener('click', editLevelsRemoveLastRow);
 
-							// 4. 拖拽排序初始化（步骤拖拽）
-							initDragDrop();
+  // 阶层增删
+  addLevelBtn.addEventListener('click', addLevel);
+  removeLevelBtn.addEventListener('click', removeLastLevel);
 
-							// 5. 全选复选框事件绑定
-							bindCheckAll();
+  // 字段标签编辑
+  document.querySelectorAll('.edit-icon[data-target]').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      const target = this.getAttribute('data-target');
+      openModal(target);
+    });
+  });
+  document.getElementById('editSectionTitle').addEventListener('click', function() {
+    openModal('sectionTitle');
+  });
 
-							// 6. 所有按钮及交互事件绑定（原来 init 中的事件监听）
-							// 阶层折叠
-							levelsToggleHeader.addEventListener('click', toggleLevels);
-							editLevelsTitle.addEventListener('click', function(e) {
-								e.stopPropagation();
-								openEditLevels();
-							});
+  // 模态框
+  modalConfirm.addEventListener('click', confirmModal);
+  modalCancel.addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', function(e) {
+    if (e.target === modalOverlay) closeModal();
+  });
+  modalLabel.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') confirmModal();
+  });
+  modalDefault.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') confirmModal();
+  });
 
-							// 阶层编辑模态框
-							editLevelsCancel.addEventListener('click', closeEditLevels);
-							editLevelsOverlay.addEventListener('click', function(e) {
-								if (e.target === editLevelsOverlay) closeEditLevels();
-							});
-							editLevelsSave.addEventListener('click', saveEditLevels);
-							editLevelsAddBtn.addEventListener('click', editLevelsAddRow);
-							editLevelsRemoveBtn.addEventListener('click', editLevelsRemoveLastRow);
+  // 编辑用例模态框
+  editCaseSave.addEventListener('click', saveEditCase);
+  editCaseCancel.addEventListener('click', closeEditCase);
+  editOverlay.addEventListener('click', function(e) {
+    if (e.target === editOverlay) closeEditCase();
+  });
+  editAddStep.addEventListener('click', editAddStepHandler);
+  editCaseLevelAddBtn.addEventListener('click', editCaseLevelAdd);
+  editCaseLevelRemoveBtn.addEventListener('click', editCaseLevelRemoveLast);
 
-							// 阶层增删
-							addLevelBtn.addEventListener('click', addLevel);
-							removeLevelBtn.addEventListener('click', removeLastLevel);
+  // 主按钮
+  btnAdd.addEventListener('click', addRow);
+  btnReset.addEventListener('click', resetInputs);
+  btnFillDemo.addEventListener('click', fillDemo);
+  btnExportTop.addEventListener('click', exportExcel);
+  btnExportBottom.addEventListener('click', exportExcel);
 
-							// 字段标签编辑（所有 ✏️ 按钮）
-							document.querySelectorAll('.edit-icon[data-target]').forEach(btn => {
-								btn.addEventListener('click', function(e) {
-									const target = this.getAttribute('data-target');
-									openModal(target);
-								});
-							});
-							document.getElementById('editSectionTitle').addEventListener('click', function() {
-								openModal('sectionTitle');
-							});
+  // 步骤按钮
+  addStepBtn.addEventListener('click', addStep);
+  removeStepBtn.addEventListener('click', removeLastStep);
+  addStepBtnBottom.addEventListener('click', addStep);
+  removeStepBtnBottom.addEventListener('click', removeLastStep);
 
-							// 模态框确认/取消
-							modalConfirm.addEventListener('click', confirmModal);
-							modalCancel.addEventListener('click', closeModal);
-							modalOverlay.addEventListener('click', function(e) {
-								if (e.target === modalOverlay) closeModal();
-							});
-							modalLabel.addEventListener('keydown', function(e) {
-								if (e.key === 'Enter') confirmModal();
-							});
-							modalDefault.addEventListener('keydown', function(e) {
-								if (e.key === 'Enter') confirmModal();
-							});
+  // 表格工具栏
+  deleteSelected.addEventListener('click', deleteSelectedRows);
+  clearAllCases.addEventListener('click', clearAllCasesHandler);
 
-							// 编辑用例模态框
-							editCaseSave.addEventListener('click', saveEditCase);
-							editCaseCancel.addEventListener('click', closeEditCase);
-							editOverlay.addEventListener('click', function(e) {
-								if (e.target === editOverlay) closeEditCase();
-							});
-							editAddStep.addEventListener('click', editAddStepHandler);
-							editCaseLevelAddBtn.addEventListener('click', editCaseLevelAdd);
-							editCaseLevelRemoveBtn.addEventListener('click', editCaseLevelRemoveLast);
+  // 输入框按 Enter 触发添加
+  document.querySelectorAll('.input-group input, .input-group textarea, .input-group select').forEach(el => {
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+        e.preventDefault();
+        addRow();
+      }
+    });
+  });
 
-							// 主按钮
-							btnAdd.addEventListener('click', addRow);
-							btnReset.addEventListener('click', resetInputs);
-							btnFillDemo.addEventListener('click', fillDemo);
+  // 3. 首次渲染表格（此时 rows 为空，稍后由 Firebase 填充）
+  renderTable();
+  titleInput.focus();
 
-							// 导出按钮（顶部和底部）
-							btnExportTop.addEventListener('click', exportExcel);
-							btnExportBottom.addEventListener('click', exportExcel);
-
-							// 添加步骤按钮（顶部和底部）
-							addStepBtn.addEventListener('click', addStep);
-							removeStepBtn.addEventListener('click', removeLastStep);
-							addStepBtnBottom.addEventListener('click', addStep);
-							removeStepBtnBottom.addEventListener('click', removeLastStep);
-
-							// 表格工具栏：删除选中 & 清空所有
-							deleteSelected.addEventListener('click', deleteSelectedRows);
-							clearAllCases.addEventListener('click', clearAllCasesHandler);
-
-							// 输入框按 Enter 触发添加
-							document.querySelectorAll('.input-group input, .input-group textarea, .input-group select')
-								.forEach(el => {
-									el.addEventListener('keydown', function(e) {
-										if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
-											e.preventDefault();
-											addRow();
-										}
-									});
-								});
-
-							// 7. 首次渲染表格（此时 rows 可能为空，但监听会很快填充）
-							renderTable();
-
-							// 8. 焦点设置
-							titleInput.focus();
-
-							console.log(`🧪 TestCase ${VERSION} 已启动（Firebase 模式）`);
-						})
-						.catch((err) => {
-							console.error('❌ Firebase 登录失败', err);
-							showToast('无法连接数据库，请刷新重试或检查网络', 'error');
-							// 即使登录失败，也可以让界面可用（但无数据同步），避免完全卡死
-							// 可降级为本地模式（此处可根据需求决定是否继续初始化）
-							// 这里简单提示并继续加载 UI（但数据将为空）
-							applyFieldLabels();
-							renderLevels(Array(levelCount).fill(''));
-							renderSteps(Array(stepCount).fill({
-								step: '',
-								expected: ''
-							}));
-							initDragDrop();
-							bindCheckAll();
-							// 绑定事件（同上，但省略 db 相关操作，因为无法写入）
-							// ... 为了简洁，此处省略重复代码，实际可根据需求判断
-							renderTable();
-							titleInput.focus();
-							showToast('离线模式：数据不会同步', 'info');
-						});
-				}
-
+  // 4. 然后尝试登录 Firebase（不影响界面交互）
+  auth.signInAnonymously()
+    .then(() => {
+      console.log('✅ Firebase 匿名登录成功');
+      // 登录成功后启动数据监听
+      startDataSync();
+      showToast('已连接云端，数据实时同步', 'success');
+    })
+    .catch((err) => {
+      console.error('❌ Firebase 登录失败', err);
+      showToast('无法连接数据库，数据将保存在本地（刷新后丢失）', 'error');
+      // 可降级为本地模式（根据需要，此处留空）
+    });
+}
 				if (document.readyState === 'loading') {
 					document.addEventListener('DOMContentLoaded', init);
 				} else {
