@@ -868,7 +868,8 @@
 
 			thead th {
 				padding: 8px 10px;
-				text-align: left;
+				text-align: center;
+				/* 所有标题居中 */
 				font-weight: 600;
 				color: #1a2332;
 				border-bottom: 2px solid #e2e9f2;
@@ -902,6 +903,7 @@
 			thead th:first-child {
 				background: #f7faff !important;
 				z-index: 11 !important;
+				/* 高于其他表头，解决悬浮问题 */
 			}
 
 			tbody tr:hover td:first-child {
@@ -1465,16 +1467,264 @@
 		</style>
 	</head>
 	<body>
-		<!-- 此处保留您原有的 HTML 结构，完全不变 -->
-		<!-- 我下面仅列出关键的 JavaScript 修改部分，其他函数保持不变 -->
-		<!-- 为了完整性，这里给出完整的 HTML 结构，但为了节省篇幅，假设您已经拥有原有 body 内容 -->
-		<!-- 您只需将以下 script 内容替换到您的 index.html 中，并确保 CSS 已更新 -->
 
 		<div class="app">
-			<!-- ... 原有所有 HTML 内容 ... -->
+			<!-- 头部 -->
+			<div class="header">
+				<h1>🧪 <span>TestCase-V1.2</span></h1>
+				<p>测试用例生成器 · 截断优化 · 详情顺序调整 · Excel顶端对齐 · 实时同步</p>
+				<div class="version">版本 V1.2</div>
+			</div>
+
+			<!-- 输入卡片 -->
+			<div class="input-card">
+				<!-- 阶层区域 -->
+				<div class="levels-section">
+					<div class="levels-header" id="levelsToggleHeader">
+						<span class="levels-title" id="levelsTitle">階層</span>
+						<span class="hint">（点击折叠/展开）</span>
+						<button class="edit-icon" id="editLevelsTitle">✏️</button>
+						<span class="toggle-icon" id="levelsToggleIcon">▼</span>
+					</div>
+					<div class="levels-body" id="levelsBody">
+						<div class="levels-labels-editor" style="display:none;">
+							<span class="label-item">
+								<span>列前缀：<strong id="displayLevelsPrefix">階層</strong></span>
+								<button class="edit-icon" data-target="levelsPrefix">✏️</button>
+							</span>
+						</div>
+						<div class="levels-container" id="levelsContainer"></div>
+						<div class="levels-actions">
+							<button class="btn-sm add" id="addLevelBtn">＋ 添加行</button>
+							<button class="btn-sm remove" id="removeLevelBtn" disabled>－ 删除最后行</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- 主输入网格 -->
+				<div class="input-grid">
+					<!-- Title -->
+					<div class="input-group" data-field="title">
+						<label style="display:flex; align-items:center; width:100%; gap:6px;">
+							<span class="label-text">Title</span><span class="required">*</span>
+							<button class="edit-icon" data-target="title">✏️</button>
+							<span style="flex:1;"></span>
+							<a href="parten.html" target="_blank"
+								style="font-size:16px; color:#2b7a4b; text-decoration:none; font-weight:500; background:#e8f5ee; padding:2px 14px; border-radius:30px; display:inline-block; border:1px solid #2b7a4b; white-space:nowrap;">
+								📋 Parten
+							</a>
+						</label>
+						<input type="text" id="title" placeholder="例如：测试用例标题" value="测试用例" />
+					</div>
+					<!-- 前提条件 -->
+					<div class="input-group" data-field="precondition">
+						<label>
+							<span class="label-text">前提条件</span>
+							<button class="edit-icon" data-target="precondition">✏️</button>
+						</label>
+						<textarea id="precondition" placeholder="例如：已注册账号&#10;且已登录" rows="2"></textarea>
+					</div>
+					<!-- Priority -->
+					<div class="input-group" data-field="priority">
+						<label>
+							<span class="label-text">Priority</span>
+							<button class="edit-icon" data-target="priority">✏️</button>
+						</label>
+						<select id="priority">
+							<option value="P0" selected>P0</option>
+							<option value="P1">P1</option>
+							<option value="P2">P2</option>
+							<option value="P3">P3</option>
+							<option value="P4">P4</option>
+							<option value="P5">P5</option>
+						</select>
+					</div>
+					<!-- Memo -->
+					<div class="input-group" data-field="remark">
+						<label>
+							<span class="label-text">Memo</span>
+							<button class="edit-icon" data-target="remark">✏️</button>
+						</label>
+						<textarea id="remark" placeholder="其他补充信息" rows="2"></textarea>
+					</div>
+
+					<!-- 步骤区域 -->
+					<div class="steps-section">
+						<div class="steps-header">
+							<div class="section-title">
+								<h3 id="sectionTitle">📝 测试步骤与预期结果</h3>
+								<button class="edit-icon" id="editSectionTitle">✏️</button>
+								<span
+									style="font-weight:400;font-size:14px;color:#5e6f8d;margin-left:4px;">（步骤1必填，其余可选）</span>
+							</div>
+							<div class="step-actions">
+								<button class="btn-sm add" id="addStepBtn">＋ 添加步骤</button>
+								<button class="btn-sm remove" id="removeStepBtn" disabled>－ 删除最后一步</button>
+							</div>
+						</div>
+						<div class="step-labels-editor">
+							<span class="label-item">
+								<span>组前缀：<strong id="displayStepGroupPrefix">Step</strong></span>
+								<button class="edit-icon" data-target="stepGroupPrefix">✏️</button>
+							</span>
+							<span class="label-item">
+								<span>手顺：<strong id="displayStepAction">手顺</strong></span>
+								<button class="edit-icon" data-target="stepActionLabel">✏️</button>
+							</span>
+							<span class="label-item">
+								<span>期待值：<strong id="displayStepExpected">期待值</strong></span>
+								<button class="edit-icon" data-target="stepExpectedLabel">✏️</button>
+							</span>
+						</div>
+						<div class="steps-container" id="stepsContainer"></div>
+						<div class="step-actions-bottom">
+							<button class="btn-sm add" id="addStepBtnBottom">＋ 添加步骤</button>
+							<button class="btn-sm remove" id="removeStepBtnBottom" disabled>－ 删除最后一步</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- 操作按钮 -->
+				<div class="btn-group">
+					<button class="btn btn-danger" id="btnReset">重置</button>
+					<button class="btn btn-outline" id="btnFillDemo">📋 示例数据</button>
+					<button class="btn btn-outline" id="btnImportTitles">📥 一键导入title</button>
+					<button class="btn btn-primary" id="btnAdd">＋ 生成case</button>
+				</div>
+
+				<div class="stats">
+					<span>📌 当前共 <strong id="rowCount">0</strong> 条用例</span>
+					<span>🔢 当前步骤数：<strong id="stepCountDisplay">3</strong></span>
+					<span>📂 当前层级数：<strong id="levelCountDisplay">3</strong></span>
+					<span>💡 拖拽步骤右侧 ☰ 图标调整顺序</span>
+				</div>
+			</div>
+
+			<!-- 表格展示 -->
+			<div class="table-wrapper">
+				<div class="table-header">
+					<h2>
+						📋 用例列表
+						<span class="badge" id="badgeCount">0 条</span>
+					</h2>
+					<div class="table-actions">
+						<button class="btn btn-success" id="btnExportTop">⬇ 导出 Excel</button>
+					</div>
+				</div>
+				<div class="table-toolbar">
+					<label><input type="checkbox" id="checkAll"> 全选</label>
+					<button class="btn-sm danger" id="deleteSelected">删除选中</button>
+					<button class="btn-sm danger" id="clearAllCases">清空</button>
+				</div>
+				<div class="table-scroll">
+					<table>
+						<thead id="tableHead"></thead>
+						<tbody id="tableBody"></tbody>
+					</table>
+				</div>
+				<div id="emptyState" class="empty-state">
+					<div class="empty-icon">📭</div>
+					<p>还没有测试用例，请在上方填写信息后点击「生成case」</p>
+				</div>
+				<div class="table-footer">
+					<button class="btn btn-success" id="btnExportBottom">⬇ 导出 Excel</button>
+				</div>
+			</div>
 		</div>
 
-		<!-- 模态框等保持不变 -->
+		<!-- 模态框：编辑字段名称 -->
+		<div class="modal-overlay" id="modalOverlay">
+			<div class="modal-box">
+				<h3 id="modalTitle">编辑字段</h3>
+				<div class="form-group">
+					<label>显示名称</label>
+					<input type="text" id="modalLabel" placeholder="输入显示名称" />
+				</div>
+				<div class="form-group" id="modalDefaultGroup">
+					<label>默认值</label>
+					<input type="text" id="modalDefault" placeholder="输入默认值" />
+				</div>
+				<div class="modal-actions">
+					<button class="btn btn-secondary" id="modalCancel">取消</button>
+					<button class="btn btn-primary" id="modalConfirm">确定</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- 模态框：编辑阶层 -->
+		<div class="modal-overlay" id="editLevelsOverlay">
+			<div class="modal-box">
+				<h3>编辑阶层</h3>
+				<div class="form-group">
+					<label>标题</label>
+					<input type="text" id="editLevelsTitleInput" />
+				</div>
+				<div class="form-group">
+					<label>内容列表 <span style="font-weight:400;font-size:13px;color:#5e6f8d;">（每行一列）</span></label>
+					<div class="edit-levels-container" id="editLevelsContainer"></div>
+					<div class="edit-level-actions">
+						<button class="btn btn-sm add" id="editLevelsAddBtn">＋ 添加行</button>
+						<button class="btn btn-sm remove" id="editLevelsRemoveBtn" disabled>－ 删除最后行</button>
+					</div>
+				</div>
+				<div class="modal-actions">
+					<button class="btn btn-secondary" id="editLevelsCancel">取消</button>
+					<button class="btn btn-primary" id="editLevelsSave">保存</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- 模态框：编辑用例 -->
+		<div class="modal-overlay" id="editCaseOverlay">
+			<div class="modal-box">
+				<h3 id="editCaseTitle">编辑用例</h3>
+				<div class="form-group">
+					<label>Title <span class="required">*</span></label>
+					<input type="text" id="editTitle" />
+				</div>
+				<div class="form-group">
+					<label>前提条件</label>
+					<textarea id="editPrecondition" rows="2"></textarea>
+				</div>
+				<div class="form-group">
+					<label>Priority</label>
+					<select id="editPriority">
+						<option value="P0">P0</option>
+						<option value="P1">P1</option>
+						<option value="P2">P2</option>
+						<option value="P3">P3</option>
+						<option value="P4">P4</option>
+						<option value="P5">P5</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label>Memo</label>
+					<textarea id="editRemark" rows="2"></textarea>
+				</div>
+				<div class="form-group">
+					<label>阶层</label>
+					<div class="edit-levels-container" id="editCaseLevelsContainer"></div>
+					<div class="edit-level-actions">
+						<button class="btn btn-sm add" id="editCaseLevelAddBtn">＋ 添加阶层</button>
+						<button class="btn btn-sm remove" id="editCaseLevelRemoveBtn" disabled>－ 删除最后阶层</button>
+					</div>
+				</div>
+				<div class="form-group">
+					<label>步骤 <span class="required">*</span>（步骤1必填，其余可选）</label>
+					<div class="edit-steps-container" id="editStepsContainer"></div>
+					<div class="edit-step-actions">
+						<button class="btn btn-sm add" id="editAddStep">＋ 添加步骤</button>
+					</div>
+				</div>
+				<div class="modal-actions">
+					<button class="btn btn-secondary" id="editCaseCancel">取消</button>
+					<button class="btn btn-primary" id="editCaseSave">保存</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Toast -->
+		<div id="toast" class="toast"></div>
 
 		<script>
 			(function() {
@@ -1497,10 +1747,11 @@
 				let unsubscribe = null;
 				let rows = [];
 
+				// ---------- 版本 ----------
 				const VERSION = 'V1.2';
 				console.log(`🧪 TestCase ${VERSION} 已启动`);
 
-				// ---------- DOM 引用（与您原来相同） ----------
+				// ---------- DOM 引用 ----------
 				const $ = (id) => document.getElementById(id);
 				const titleInput = $('title');
 				const precondInput = $('precondition');
@@ -1571,192 +1822,1194 @@
 				const displayStepAction = $('displayStepAction');
 				const displayStepExpected = $('displayStepExpected');
 
-				// ---------- 工具函数（与您原来相同） ----------
+				// ---------- 工具函数 ----------
 				function truncate(str, maxLen) {
-					/* ... */ }
+					if (!str) return '';
+					if (str.length > maxLen) return str.substring(0, maxLen) + '...';
+					return str;
+				}
 
 				function showToast(message, type = 'info', duration = 2400) {
-					/* ... */ }
+					toast.textContent = message;
+					toast.className = 'toast ' + type;
+					void toast.offsetWidth;
+					toast.classList.add('show');
+					clearTimeout(toast._timer);
+					toast._timer = setTimeout(() => {
+						toast.classList.remove('show');
+					}, duration);
+				}
 
 				function escapeHtml(str) {
-					/* ... */ }
+					if (!str) return '';
+					const map = {
+						'&': '&amp;',
+						'<': '&lt;',
+						'>': '&gt;',
+						'"': '&quot;',
+						"'": '&#039;'
+					};
+					return String(str).replace(/[&<>"']/g, m => map[m]);
+				}
 
 				function getValidSteps(stepsArray) {
-					/* ... */ }
+					return stepsArray.filter(s => s.step.length > 0 && s.expected.length > 0);
+				}
 
 				function validateStep1(steps) {
-					/* ... */ }
+					if (steps.length === 0) return false;
+					const first = steps[0];
+					return first.step.length > 0 && first.expected.length > 0;
+				}
 
-				// ---------- 配置管理（与您原来相同） ----------
+				// ---------- 配置管理 ----------
 				const fieldConfig = {
-					/* ... 与原来一致 ... */ };
+					title: {
+						label: 'Title',
+						defaultValue: '测试用例',
+						showDefault: true
+					},
+					precondition: {
+						label: '前提条件',
+						defaultValue: '',
+						showDefault: true
+					},
+					priority: {
+						label: 'Priority',
+						defaultValue: 'P0',
+						showDefault: true
+					},
+					remark: {
+						label: 'Memo',
+						defaultValue: '',
+						showDefault: true
+					},
+					sectionTitle: {
+						label: '📝 测试步骤与预期结果',
+						defaultValue: '📝 测试步骤与预期结果',
+						showDefault: true
+					},
+					stepGroupPrefix: {
+						label: 'Step 前缀',
+						defaultValue: 'Step',
+						showDefault: true
+					},
+					stepActionLabel: {
+						label: '手顺',
+						defaultValue: '手顺',
+						showDefault: true
+					},
+					stepExpectedLabel: {
+						label: '期待值',
+						defaultValue: '期待值',
+						showDefault: true
+					},
+					levelsSectionTitle: {
+						label: '階層',
+						defaultValue: '階層',
+						showDefault: true
+					},
+					levelsPrefix: {
+						label: '階層',
+						defaultValue: '階層',
+						showDefault: true
+					}
+				};
 
 				function loadConfig() {
-					/* ... */ }
+					try {
+						const saved = localStorage.getItem('testCaseFieldConfig_v2');
+						if (saved) {
+							const parsed = JSON.parse(saved);
+							Object.keys(parsed).forEach(key => {
+								if (fieldConfig[key]) {
+									fieldConfig[key].label = parsed[key].label;
+									if (parsed[key].defaultValue !== undefined) {
+										fieldConfig[key].defaultValue = parsed[key].defaultValue;
+									}
+								}
+							});
+						}
+					} catch (e) {}
+				}
 
 				function saveConfig() {
-					/* ... */ }
+					try {
+						const toSave = {};
+						Object.keys(fieldConfig).forEach(key => {
+							toSave[key] = {
+								label: fieldConfig[key].label,
+								defaultValue: fieldConfig[key].defaultValue
+							};
+						});
+						localStorage.setItem('testCaseFieldConfig_v2', JSON.stringify(toSave));
+					} catch (e) {}
+				}
+
+				loadConfig();
 
 				function applyFieldLabels() {
-					/* ... */ }
+					const titleLabel = document.querySelector('[data-field="title"] .label-text');
+					if (titleLabel) titleLabel.textContent = fieldConfig.title.label;
+					titleInput.placeholder = `例如：${fieldConfig.title.defaultValue || '输入标题'}`;
+					titleInput.value = fieldConfig.title.defaultValue;
+
+					const precondLabel = document.querySelector('[data-field="precondition"] .label-text');
+					if (precondLabel) precondLabel.textContent = fieldConfig.precondition.label;
+					precondInput.placeholder = `例如：${fieldConfig.precondition.defaultValue || '输入前提条件'}`;
+
+					const priorityLabel = document.querySelector('[data-field="priority"] .label-text');
+					if (priorityLabel) priorityLabel.textContent = fieldConfig.priority.label;
+					prioritySelect.value = fieldConfig.priority.defaultValue;
+
+					const remarkLabel = document.querySelector('[data-field="remark"] .label-text');
+					if (remarkLabel) remarkLabel.textContent = fieldConfig.remark.label;
+					remarkInput.placeholder = `例如：${fieldConfig.remark.defaultValue || '输入Memo'}`;
+
+					const sectionTitleEl = $('sectionTitle');
+					if (sectionTitleEl) {
+						let titleText = fieldConfig.sectionTitle.label;
+						if (!titleText.startsWith('📝')) titleText = '📝 ' + titleText;
+						sectionTitleEl.textContent = titleText;
+					}
+
+					displayStepGroupPrefix.textContent = fieldConfig.stepGroupPrefix.defaultValue;
+					displayStepAction.textContent = fieldConfig.stepActionLabel.defaultValue;
+					displayStepExpected.textContent = fieldConfig.stepExpectedLabel.defaultValue;
+					levelsTitle.textContent = fieldConfig.levelsSectionTitle.defaultValue;
+				}
 
 				function getStepGroupPrefix() {
-					/* ... */ }
+					return fieldConfig.stepGroupPrefix.defaultValue;
+				}
 
 				function getStepActionLabel() {
-					/* ... */ }
+					return fieldConfig.stepActionLabel.defaultValue;
+				}
 
 				function getStepExpectedLabel() {
-					/* ... */ }
+					return fieldConfig.stepExpectedLabel.defaultValue;
+				}
 
 				function getLevelsTitle() {
-					/* ... */ }
+					return fieldConfig.levelsSectionTitle.defaultValue;
+				}
 
-				// ---------- 阶层管理（与您原来相同） ----------
+				// ---------- 阶层管理 ----------
 				let levelCount = 3;
 
 				function getLevelValues() {
-					/* ... */ }
+					const inputs = levelsContainer.querySelectorAll('.level-input');
+					return Array.from(inputs).map(inp => inp.value.trim());
+				}
 
 				function renderLevels(values) {
-					/* ... */ }
+					let html = '';
+					for (let i = 0; i < levelCount; i++) {
+						const val = values && values[i] !== undefined ? values[i] : '';
+						html += `
+                    <div class="level-row" data-level-index="${i}">
+                        <span class="level-index">${i+1}</span>
+                        <input type="text" class="level-input" placeholder="输入第${i+1}列" value="${escapeHtml(val)}" />
+                        ${levelCount > 1 ? `<button class="btn-del-level" data-level="${i}" title="删除此行">✕</button>` : ''}
+                    </div>
+                `;
+					}
+					levelsContainer.innerHTML = html;
+					levelCountDisplay.textContent = levelCount;
+					removeLevelBtn.disabled = (levelCount <= 1);
+
+					levelsContainer.querySelectorAll('.btn-del-level').forEach(btn => {
+						btn.addEventListener('click', function(e) {
+							const idx = parseInt(this.getAttribute('data-level'), 10);
+							if (levelCount > 1) {
+								const current = getLevelValues();
+								current.splice(idx, 1);
+								levelCount = current.length;
+								renderLevels(current);
+								showToast(`已删除行 ${idx+1}`, 'info');
+							}
+						});
+					});
+					levelsContainer.querySelectorAll('.level-input').forEach(inp => {
+						inp.addEventListener('keydown', function(e) {
+							if (e.key === 'Enter') {
+								e.preventDefault();
+								addRow();
+							}
+						});
+					});
+				}
 
 				function addLevel() {
-					/* ... */ }
+					levelCount++;
+					const current = getLevelValues();
+					current.push('');
+					renderLevels(current);
+					const inputs = levelsContainer.querySelectorAll('.level-input');
+					if (inputs.length) inputs[inputs.length - 1].focus();
+					showToast(`已添加行 ${levelCount}`, 'info');
+				}
 
 				function removeLastLevel() {
-					/* ... */ }
+					if (levelCount <= 1) {
+						showToast('至少保留一行', 'error');
+						return;
+					}
+					const current = getLevelValues();
+					current.pop();
+					levelCount = current.length;
+					renderLevels(current);
+					showToast(`已删除行 ${levelCount+1}`, 'info');
+				}
+
+				// ---------- 阶层折叠 ----------
 				let levelsExpanded = true;
 
 				function toggleLevels() {
-					/* ... */ }
+					levelsExpanded = !levelsExpanded;
+					if (levelsExpanded) {
+						levelsBody.classList.remove('hidden');
+						levelsToggleIcon.textContent = '▼';
+					} else {
+						levelsBody.classList.add('hidden');
+						levelsToggleIcon.textContent = '▶';
+					}
+				}
 
+				// ---------- 阶层编辑模态框 ----------
 				function openEditLevels() {
-					/* ... */ }
+					editLevelsTitleInput.value = fieldConfig.levelsSectionTitle.defaultValue;
+					const currentVals = getLevelValues();
+					renderEditLevels(currentVals);
+					editLevelsOverlay.classList.add('active');
+					editLevelsTitleInput.focus();
+					editLevelsTitleInput.select();
+				}
 
 				function closeEditLevels() {
-					/* ... */ }
+					editLevelsOverlay.classList.remove('active');
+				}
 
 				function renderEditLevels(values) {
-					/* ... */ }
+					let html = '';
+					values.forEach((val, idx) => {
+						html += `
+                    <div class="edit-level-item" data-level-index="${idx}">
+                        <span class="level-index">${idx+1}</span>
+                        <input type="text" class="edit-level-input" value="${escapeHtml(val)}" />
+                        ${values.length > 1 ? `<button class="btn-sm-icon delete" data-level-index="${idx}" title="删除此行">✕</button>` : ''}
+                    </div>
+                `;
+					});
+					editLevelsContainer.innerHTML = html;
+					editLevelsRemoveBtn.disabled = (values.length <= 1);
+					editLevelsContainer.querySelectorAll('.btn-sm-icon.delete').forEach(btn => {
+						btn.addEventListener('click', function(e) {
+							const idx = parseInt(this.getAttribute('data-level-index'), 10);
+							const current = getEditLevelValues();
+							if (current.length <= 1) {
+								showToast('至少保留一行', 'error');
+								return;
+							}
+							current.splice(idx, 1);
+							renderEditLevels(current);
+						});
+					});
+				}
 
 				function getEditLevelValues() {
-					/* ... */ }
+					const items = editLevelsContainer.querySelectorAll('.edit-level-item');
+					return Array.from(items).map(item => item.querySelector('.edit-level-input').value.trim());
+				}
 
 				function saveEditLevels() {
-					/* ... */ }
+					const newTitle = editLevelsTitleInput.value.trim();
+					if (!newTitle) {
+						showToast('标题不能为空', 'error');
+						editLevelsTitleInput.focus();
+						return;
+					}
+					const newValues = getEditLevelValues();
+					fieldConfig.levelsSectionTitle.defaultValue = newTitle;
+					fieldConfig.levelsSectionTitle.label = newTitle;
+					levelCount = newValues.length;
+					renderLevels(newValues);
+					applyFieldLabels();
+					saveConfig();
+					closeEditLevels();
+					showToast('阶层已更新', 'success');
+				}
 
 				function editLevelsAddRow() {
-					/* ... */ }
+					const current = getEditLevelValues();
+					current.push('');
+					renderEditLevels(current);
+					const inputs = editLevelsContainer.querySelectorAll('.edit-level-input');
+					if (inputs.length) inputs[inputs.length - 1].focus();
+				}
 
 				function editLevelsRemoveLastRow() {
-					/* ... */ }
+					const current = getEditLevelValues();
+					if (current.length <= 1) {
+						showToast('至少保留一行', 'error');
+						return;
+					}
+					current.pop();
+					renderEditLevels(current);
+				}
 
-				// ---------- 步骤管理（与您原来相同） ----------
+				// ---------- 步骤管理 ----------
 				let stepCount = 3;
 
 				function getStepValues() {
-					/* ... */ }
+					const stepInputs = stepsContainer.querySelectorAll('.step-action-input');
+					const expectedInputs = stepsContainer.querySelectorAll('.step-expected-input');
+					const result = [];
+					for (let i = 0; i < stepInputs.length; i++) {
+						result.push({
+							step: stepInputs[i].value.trim(),
+							expected: expectedInputs[i] ? expectedInputs[i].value.trim() : ''
+						});
+					}
+					return result;
+				}
 
 				function renderSteps(values) {
-					/* ... */ }
+					const prefix = getStepGroupPrefix();
+					const actionLabel = getStepActionLabel();
+					const expectedLabel = getStepExpectedLabel();
+					const count = stepCount;
+					let html = '';
+					for (let i = 0; i < count; i++) {
+						const idx = i + 1;
+						const val = values && values[i] ? values[i] : {
+							step: '',
+							expected: ''
+						};
+						html += `
+                    <div class="step-row" draggable="true" data-step-index="${idx}">
+                        <div class="drag-handle" title="拖拽调整顺序">☰</div>
+                        <div class="step-group-label">
+                            <span class="step-number">${prefix} ${idx}</span>
+                            ${idx > 1 ? `<button class="btn-del-step" data-step="${idx}" title="删除此步骤">✕</button>` : ''}
+                        </div>
+                        <div class="step-fields">
+                            <div class="field-item">
+                                <label>${actionLabel}</label>
+                                <textarea class="step-action-input" placeholder="${actionLabel} ${idx} ..." draggable="false">${escapeHtml(val.step)}</textarea>
+                            </div>
+                            <div class="field-item">
+                                <label>${expectedLabel}</label>
+                                <textarea class="step-expected-input" placeholder="${expectedLabel} ${idx} ..." draggable="false">${escapeHtml(val.expected)}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                `;
+					}
+					stepsContainer.innerHTML = html;
+					stepCountDisplay.textContent = count;
+					removeStepBtn.disabled = (count <= 1);
+					removeStepBtnBottom.disabled = (count <= 1);
+
+					stepsContainer.querySelectorAll('.btn-del-step').forEach(btn => {
+						btn.addEventListener('click', function(e) {
+							const idx = parseInt(this.getAttribute('data-step'), 10);
+							if (idx > 1) removeStepAt(idx);
+						});
+					});
+					stepsContainer.querySelectorAll('.step-action-input, .step-expected-input').forEach(inp => {
+						inp.addEventListener('keydown', function(e) {
+							if (e.key === 'Enter' && !e.shiftKey) {
+								e.preventDefault();
+								addRow();
+							}
+						});
+					});
+				}
 
 				function addStep() {
-					/* ... */ }
+					stepCount++;
+					const currentValues = getStepValues();
+					currentValues.push({
+						step: '',
+						expected: ''
+					});
+					renderSteps(currentValues);
+					const inputs = stepsContainer.querySelectorAll('.step-action-input');
+					if (inputs.length) inputs[inputs.length - 1].focus();
+					showToast(`已添加步骤 ${stepCount}`, 'info');
+				}
 
 				function removeLastStep() {
-					/* ... */ }
+					if (stepCount <= 1) {
+						showToast('至少保留一个步骤', 'error');
+						return;
+					}
+					const currentValues = getStepValues();
+					currentValues.pop();
+					stepCount = currentValues.length;
+					renderSteps(currentValues);
+					showToast(`已删除步骤 ${stepCount + 1}`, 'info');
+				}
 
 				function removeStepAt(index) {
-					/* ... */ }
+					if (stepCount <= 1 || index <= 1) return;
+					const currentValues = getStepValues();
+					if (currentValues.length >= index) currentValues.splice(index - 1, 1);
+					stepCount = currentValues.length;
+					renderSteps(currentValues);
+					showToast(`已删除步骤 ${index}`, 'info');
+				}
+
+				// ---------- 步骤拖拽 ----------
 				let dragSrcIndex = null;
 
 				function initDragDrop() {
-					/* ... */ }
+					stepsContainer.addEventListener('dragstart', function(e) {
+						const row = e.target.closest('.step-row');
+						if (!row) return;
+						if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') {
+							e.preventDefault();
+							return;
+						}
+						dragSrcIndex = parseInt(row.dataset.stepIndex, 10) - 1;
+						e.dataTransfer.effectAllowed = 'move';
+						e.dataTransfer.setData('text/plain', dragSrcIndex);
+						row.classList.add('dragging');
+					});
+
+					stepsContainer.addEventListener('dragend', function(e) {
+						const row = e.target.closest('.step-row');
+						if (row) row.classList.remove('dragging');
+						stepsContainer.querySelectorAll('.step-row.drag-over').forEach(el => el.classList.remove(
+							'drag-over'));
+						dragSrcIndex = null;
+					});
+
+					stepsContainer.addEventListener('dragover', function(e) {
+						e.preventDefault();
+						e.dataTransfer.dropEffect = 'move';
+						const targetRow = e.target.closest('.step-row');
+						if (targetRow) {
+							stepsContainer.querySelectorAll('.step-row.drag-over').forEach(el => el.classList.remove(
+								'drag-over'));
+							targetRow.classList.add('drag-over');
+						}
+					});
+
+					stepsContainer.addEventListener('dragleave', function(e) {
+						const targetRow = e.target.closest('.step-row');
+						if (targetRow) targetRow.classList.remove('drag-over');
+					});
+
+					stepsContainer.addEventListener('drop', function(e) {
+						e.preventDefault();
+						const targetRow = e.target.closest('.step-row');
+						if (!targetRow) return;
+						targetRow.classList.remove('drag-over');
+						const targetIndex = parseInt(targetRow.dataset.stepIndex, 10) - 1;
+						if (dragSrcIndex === null || targetIndex === dragSrcIndex) return;
+						const stepsData = getStepValues();
+						[stepsData[dragSrcIndex], stepsData[targetIndex]] = [stepsData[targetIndex], stepsData[
+							dragSrcIndex]];
+						renderSteps(stepsData);
+						showToast('步骤顺序已调整', 'info');
+					});
+				}
 
 				// ---------- 获取输入 ----------
 				function getBaseInput() {
-					/* ... */ }
+					const title = titleInput.value.trim() || fieldConfig.title.defaultValue;
+					const precondition = precondInput.value.trim();
+					const priority = prioritySelect.value;
+					const remark = remarkInput.value.trim();
+					return {
+						title,
+						precondition,
+						priority,
+						remark
+					};
+				}
 
 				function validateBase(data) {
-					/* ... */ }
+					if (!data.title) {
+						showToast(`请输入${fieldConfig.title.label}（必填）`, 'error');
+						titleInput.focus();
+						return false;
+					}
+					const allSteps = getStepValues();
+					if (!validateStep1(allSteps)) {
+						showToast(`步骤1的${getStepActionLabel()}和${getStepExpectedLabel()}不能为空`, 'error');
+						const firstInput = stepsContainer.querySelector('.step-action-input');
+						if (firstInput) firstInput.focus();
+						return false;
+					}
+					return true;
+				}
 
 				function resetInputs() {
-					/* ... */ }
+					titleInput.value = fieldConfig.title.defaultValue;
+					precondInput.value = fieldConfig.precondition.defaultValue;
+					prioritySelect.value = fieldConfig.priority.defaultValue;
+					remarkInput.value = fieldConfig.remark.defaultValue;
+					const levelVals = getLevelValues();
+					levelVals.forEach((v, i) => levelVals[i] = '');
+					renderLevels(levelVals);
+					const stepVals = getStepValues();
+					stepVals.forEach(v => {
+						v.step = '';
+						v.expected = '';
+					});
+					renderSteps(stepVals);
+					titleInput.focus();
+					showToast('输入区域已重置', 'info');
+				}
 
 				// ---------- 全选逻辑 ----------
 				function updateCheckAllState() {
-					/* ... */ }
+					const checkboxes = document.querySelectorAll('.row-checkbox');
+					const checked = document.querySelectorAll('.row-checkbox:checked');
+					const allChecked = checkboxes.length > 0 && checkboxes.length === checked.length;
+					checkAll.checked = allChecked;
+					const headCheck = document.getElementById('checkAllHead');
+					if (headCheck) headCheck.checked = allChecked;
+				}
 
 				function bindCheckAll() {
-					/* ... */ }
+					const headCheck = document.getElementById('checkAllHead');
+					if (headCheck) {
+						headCheck.addEventListener('change', function() {
+							const checked = this.checked;
+							document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = checked);
+							updateCheckAllState();
+						});
+					}
+					checkAll.addEventListener('change', function() {
+						const checked = this.checked;
+						document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = checked);
+						updateCheckAllState();
+					});
+					document.addEventListener('change', function(e) {
+						if (e.target.classList.contains('row-checkbox')) updateCheckAllState();
+					});
+				}
 
 				// ---------- 数据操作 ----------
 				function addRow() {
-					/* ... */ }
+					const base = getBaseInput();
+					if (!validateBase(base)) return;
+
+					const allSteps = getStepValues();
+					const validSteps = getValidSteps(allSteps);
+					const levels = getLevelValues();
+					const maxOrder = rows.reduce((max, r) => Math.max(max, r.order || 0), 0);
+
+					const newData = {
+						title: base.title,
+						precondition: base.precondition || '',
+						priority: base.priority,
+						remark: base.remark || '',
+						levels: levels,
+						steps: validSteps,
+						order: maxOrder + 1,
+						createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+						updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+					};
+
+					db.collection('testcases').add(newData)
+						.then(() => {
+							resetInputs();
+							showToast(`✅ 已添加用例「${base.title}」 (${validSteps.length}个步骤)`, 'success');
+						})
+						.catch(err => showToast('添加失败：' + err.message, 'error'));
+				}
 
 				function deleteRow(index) {
-					/* ... */ }
+					if (index < 0 || index >= rows.length) return;
+					const row = rows[index];
+					if (!confirm(`确定要删除用例「${row.title}」吗？`)) return;
+					db.collection('testcases').doc(row.id).delete()
+						.then(() => showToast(`已删除「${row.title}」`, 'info'))
+						.catch(err => showToast('删除失败：' + err.message, 'error'));
+				}
 
 				function copyRow(index) {
-					/* ... */ }
+					if (index < 0 || index >= rows.length) return;
+					const source = rows[index];
+					const maxOrder = rows.reduce((max, r) => Math.max(max, r.order || 0), 0);
+					const newData = {
+						title: source.title,
+						precondition: source.precondition,
+						priority: source.priority,
+						remark: source.remark,
+						levels: [...source.levels],
+						steps: source.steps.map(s => ({
+							step: s.step,
+							expected: s.expected
+						})),
+						order: maxOrder + 1,
+						createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+						updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+					};
+					db.collection('testcases').add(newData)
+						.then(() => showToast(`已复制「${source.title}」`, 'success'))
+						.catch(err => showToast('复制失败：' + err.message, 'error'));
+				}
 
+				// ---------- 删除选中 / 清空所有 ----------
 				function deleteSelectedRows() {
-					/* ... */ }
+					const checked = document.querySelectorAll('.row-checkbox:checked');
+					if (checked.length === 0) {
+						showToast('请至少选择一个用例', 'error');
+						return;
+					}
+					if (!confirm(`确定要删除选中的 ${checked.length} 个用例吗？`)) return;
+					const batch = db.batch();
+					checked.forEach(cb => {
+						const idx = parseInt(cb.dataset.index, 10);
+						const row = rows[idx];
+						if (row && row.id) batch.delete(db.collection('testcases').doc(row.id));
+					});
+					batch.commit()
+						.then(() => showToast(`已删除 ${checked.length} 个用例`, 'success'))
+						.catch(err => showToast('批量删除失败：' + err.message, 'error'));
+				}
 
 				function clearAllCasesHandler() {
-					/* ... */ }
+					if (rows.length === 0) {
+						showToast('列表已经是空的', 'info');
+						return;
+					}
+					if (!confirm('确定要清空所有用例吗？此操作不可恢复！')) return;
+					const batch = db.batch();
+					rows.forEach(row => batch.delete(db.collection('testcases').doc(row.id)));
+					batch.commit()
+						.then(() => showToast('已清空所有用例', 'info'))
+						.catch(err => showToast('清空失败：' + err.message, 'error'));
+				}
 
 				// ---------- 编辑用例 ----------
 				let editIndex = -1;
 
 				function openEditCase(index) {
-					/* ... */ }
+					if (index < 0 || index >= rows.length) return;
+					editIndex = index;
+					const row = rows[index];
+					editTitle.value = row.title || '';
+					editPrecondition.value = row.precondition || '';
+					editPriority.value = row.priority || 'P0';
+					editRemark.value = row.remark || '';
+					const levels = row.levels || [''];
+					renderEditCaseLevels(levels);
+					const steps = row.steps && row.steps.length > 0 ? row.steps : [{
+						step: '',
+						expected: ''
+					}];
+					renderEditSteps(steps);
+					editOverlay.classList.add('active');
+					editTitle.focus();
+					editTitle.select();
+				}
 
 				function closeEditCase() {
-					/* ... */ }
+					editOverlay.classList.remove('active');
+					editIndex = -1;
+				}
 
 				function renderEditCaseLevels(values) {
-					/* ... */ }
+					let html = '';
+					values.forEach((val, idx) => {
+						html += `
+                    <div class="edit-level-item" data-level-index="${idx}">
+                        <span class="level-index">${idx+1}</span>
+                        <input type="text" class="edit-case-level-input" value="${escapeHtml(val)}" />
+                        ${values.length > 1 ? `<button class="btn-sm-icon delete" data-level-index="${idx}" title="删除此行">✕</button>` : ''}
+                    </div>
+                `;
+					});
+					editCaseLevelsContainer.innerHTML = html;
+					editCaseLevelRemoveBtn.disabled = (values.length <= 1);
+					editCaseLevelsContainer.querySelectorAll('.btn-sm-icon.delete').forEach(btn => {
+						btn.addEventListener('click', function(e) {
+							const idx = parseInt(this.getAttribute('data-level-index'), 10);
+							const current = getEditCaseLevelValues();
+							if (current.length <= 1) {
+								showToast('至少保留一层', 'error');
+								return;
+							}
+							current.splice(idx, 1);
+							renderEditCaseLevels(current);
+						});
+					});
+				}
 
 				function getEditCaseLevelValues() {
-					/* ... */ }
+					const items = editCaseLevelsContainer.querySelectorAll('.edit-case-level-input');
+					return Array.from(items).map(inp => inp.value.trim());
+				}
 
 				function editCaseLevelAdd() {
-					/* ... */ }
+					const current = getEditCaseLevelValues();
+					current.push('');
+					renderEditCaseLevels(current);
+					const inputs = editCaseLevelsContainer.querySelectorAll('.edit-case-level-input');
+					if (inputs.length) inputs[inputs.length - 1].focus();
+				}
 
 				function editCaseLevelRemoveLast() {
-					/* ... */ }
+					const current = getEditCaseLevelValues();
+					if (current.length <= 1) {
+						showToast('至少保留一层', 'error');
+						return;
+					}
+					current.pop();
+					renderEditCaseLevels(current);
+				}
 
 				function renderEditSteps(steps) {
-					/* ... */ }
+					const actionLabel = getStepActionLabel();
+					const expectedLabel = getStepExpectedLabel();
+					let html = '';
+					steps.forEach((item, idx) => {
+						const i = idx + 1;
+						html += `
+                    <div class="edit-step-item" data-step-index="${idx}">
+                        <div class="step-header">
+                            <span class="step-index">Step ${i}</span>
+                            <button class="btn-sm-icon move" data-dir="up" title="上移">↑</button>
+                            <button class="btn-sm-icon move" data-dir="down" title="下移">↓</button>
+                            ${steps.length > 1 ? `<button class="btn-sm-icon delete" data-step-index="${idx}" title="删除此步骤">✕</button>` : ''}
+                        </div>
+                        <div class="step-fields">
+                            <textarea class="edit-step-action" placeholder="${actionLabel} ${i}">${escapeHtml(item.step)}</textarea>
+                            <textarea class="edit-step-expected" placeholder="${expectedLabel} ${i}">${escapeHtml(item.expected)}</textarea>
+                        </div>
+                    </div>
+                `;
+					});
+					editStepsContainer.innerHTML = html;
+					editStepsContainer.querySelectorAll('.move').forEach(btn => {
+						btn.addEventListener('click', function(e) {
+							const item = this.closest('.edit-step-item');
+							const idx = parseInt(item.dataset.stepIndex, 10);
+							const dir = this.getAttribute('data-dir');
+							const currentSteps = getEditStepValues();
+							if (dir === 'up' && idx > 0) {
+								[currentSteps[idx], currentSteps[idx - 1]] = [currentSteps[idx - 1],
+									currentSteps[idx]
+								];
+							} else if (dir === 'down' && idx < currentSteps.length - 1) {
+								[currentSteps[idx], currentSteps[idx + 1]] = [currentSteps[idx + 1],
+									currentSteps[idx]
+								];
+							} else return;
+							renderEditSteps(currentSteps);
+						});
+					});
+					editStepsContainer.querySelectorAll('.btn-sm-icon.delete').forEach(btn => {
+						btn.addEventListener('click', function(e) {
+							const idx = parseInt(this.getAttribute('data-step-index'), 10);
+							const currentSteps = getEditStepValues();
+							if (currentSteps.length <= 1) {
+								showToast('至少保留一个步骤', 'error');
+								return;
+							}
+							currentSteps.splice(idx, 1);
+							renderEditSteps(currentSteps);
+						});
+					});
+				}
 
 				function getEditStepValues() {
-					/* ... */ }
+					const items = editStepsContainer.querySelectorAll('.edit-step-item');
+					return Array.from(items).map(item => {
+						const actionInput = item.querySelector('.edit-step-action');
+						const expectedInput = item.querySelector('.edit-step-expected');
+						return {
+							step: actionInput.value.trim(),
+							expected: expectedInput.value.trim()
+						};
+					});
+				}
 
 				function saveEditCase() {
-					/* ... */ }
+					const title = editTitle.value.trim();
+					if (!title) {
+						showToast('Title 不能为空', 'error');
+						editTitle.focus();
+						return;
+					}
+					const precondition = editPrecondition.value.trim();
+					const priority = editPriority.value;
+					const remark = editRemark.value.trim();
+					const allSteps = getEditStepValues();
+					if (!validateStep1(allSteps)) {
+						showToast(`步骤1的${getStepActionLabel()}和${getStepExpectedLabel()}不能为空`, 'error');
+						return;
+					}
+					const validSteps = getValidSteps(allSteps);
+					const levels = getEditCaseLevelValues();
+					const updateData = {
+						title,
+						precondition,
+						priority,
+						remark,
+						levels,
+						steps: validSteps,
+						updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+					};
+					const docId = rows[editIndex].id;
+					db.collection('testcases').doc(docId).update(updateData)
+						.then(() => {
+							closeEditCase();
+							showToast(`✅ 已更新用例「${title}」`, 'success');
+						})
+						.catch(err => showToast('更新失败：' + err.message, 'error'));
+				}
 
 				function editAddStepHandler() {
-					/* ... */ }
+					const currentSteps = getEditStepValues();
+					currentSteps.push({
+						step: '',
+						expected: ''
+					});
+					renderEditSteps(currentSteps);
+					const items = editStepsContainer.querySelectorAll('.edit-step-item');
+					if (items.length) {
+						const lastTextarea = items[items.length - 1].querySelector('.edit-step-action');
+						if (lastTextarea) lastTextarea.focus();
+					}
+				}
 
 				// ---------- 一键导入标题 ----------
 				function importTitlesFromParten() {
-					/* ... */ }
+					db.collection('parten_config').doc('main').get()
+						.then((doc) => {
+							if (!doc.exists) {
+								showToast('没有找到 Parten 数据，请先在 Parten 页面生成组合结果。', 'error');
+								return;
+							}
+							const data = doc.data();
+							const results = data.results || [];
+							if (results.length === 0) {
+								showToast('Parten 组合结果为空，请先生成。', 'info');
+								return;
+							}
+							if (!confirm(`将导入 ${results.length} 条标题，确定继续吗？`)) return;
+
+							const maxOrder = rows.reduce((max, r) => Math.max(max, r.order || 0), 0);
+							let currentOrder = maxOrder + 1;
+							const batch = db.batch();
+							results.forEach((result) => {
+								const title = result.text || '未命名';
+								const newDoc = {
+									title: title,
+									precondition: '',
+									priority: 'P0',
+									remark: '',
+									levels: [],
+									steps: [],
+									order: currentOrder++,
+									createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+									updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+								};
+								const ref = db.collection('testcases').doc();
+								batch.set(ref, newDoc);
+							});
+							batch.commit()
+								.then(() => showToast(`✅ 成功导入 ${results.length} 条标题`, 'success'))
+								.catch(err => showToast('导入失败：' + err.message, 'error'));
+						})
+						.catch(err => showToast('读取 Parten 数据失败：' + err.message, 'error'));
+				}
 
 				// ---------- 导出 Excel ----------
 				async function exportExcel() {
-					/* ... */ }
+					if (rows.length === 0) {
+						showToast('没有数据可导出', 'error');
+						return;
+					}
+					try {
+						let maxSteps = 0;
+						rows.forEach(r => {
+							if (r.steps && r.steps.length > maxSteps) maxSteps = r.steps.length;
+						});
+						if (maxSteps < 1) maxSteps = 1;
+
+						const groups = {};
+						rows.forEach(row => {
+							const levels = row.levels || [];
+							const key2 = (levels.length > 1 && levels[1]) ? levels[1].trim() : '';
+							const key3 = (levels.length > 2 && levels[2]) ? levels[2].trim() : '';
+							const sheetKey = `${key2}_${key3}`;
+							if (!groups[sheetKey]) groups[sheetKey] = [];
+							groups[sheetKey].push(row);
+						});
+
+						function sanitizeSheetName(name) {
+							if (!name || name === '_') name = '默认';
+							let sanitized = name.replace(/[\\\/\?\*\[\]]/g, '_');
+							if (sanitized.length > 31) sanitized = sanitized.substring(0, 31);
+							return sanitized || 'Sheet';
+						}
+
+						const levelTitle = getLevelsTitle();
+						const prefix = getStepGroupPrefix();
+						const actionLabel = getStepActionLabel();
+						const expectedLabel = getStepExpectedLabel();
+
+						let maxLevels = 0;
+						rows.forEach(r => {
+							if (r.levels && r.levels.length > maxLevels) maxLevels = r.levels.length;
+						});
+						const minLevels = 6;
+						const displayLevels = Math.max(minLevels, maxLevels);
+
+						const workbook = new ExcelJS.Workbook();
+						const groupKeys = Object.keys(groups);
+						groupKeys.forEach((key) => {
+							const groupRows = groups[key];
+							const sheetName = sanitizeSheetName(key);
+							const worksheet = workbook.addWorksheet(sheetName);
+
+							const row1 = [];
+							row1.push(levelTitle);
+							for (let i = 1; i < displayLevels; i++) row1.push(null);
+							row1.push(fieldConfig.title.label, fieldConfig.precondition.label,
+								fieldConfig.priority.label, fieldConfig.remark.label);
+							for (let i = 1; i <= maxSteps; i++) row1.push(`${prefix} ${i}`, null);
+
+							const row2 = [];
+							for (let i = 0; i < displayLevels; i++) row2.push('');
+							row2.push('', '', '', '');
+							for (let i = 1; i <= maxSteps; i++) row2.push(actionLabel, expectedLabel);
+
+							const dataRows = groupRows.map(row => {
+								const levels = row.levels || [];
+								const paddedLevels = [];
+								for (let i = 0; i < displayLevels; i++) {
+									paddedLevels.push(i < levels.length ? levels[i] : '');
+								}
+								const steps = row.steps || [];
+								const paddedSteps = [];
+								for (let i = 0; i < maxSteps; i++) {
+									if (i < steps.length) {
+										paddedSteps.push(steps[i].step || '', steps[i].expected || '');
+									} else {
+										paddedSteps.push('', '');
+									}
+								}
+								return [...paddedLevels, row.title || '', row.precondition || '', row
+									.priority || '', row.remark || '', ...paddedSteps
+								];
+							});
+
+							const wsData = [row1, row2, ...dataRows];
+							wsData.forEach(rowData => worksheet.addRow(rowData));
+
+							const levelStartCol = 1;
+							const levelEndCol = levelStartCol + displayLevels - 1;
+							const titleCol = levelEndCol + 1;
+							const precondCol = titleCol + 1;
+							const priorityCol = precondCol + 1;
+							const memoCol = priorityCol + 1;
+							const stepStartCol = memoCol + 1;
+
+							worksheet.mergeCells(1, levelStartCol, 2, levelEndCol);
+							worksheet.mergeCells(1, titleCol, 2, titleCol);
+							worksheet.mergeCells(1, precondCol, 2, precondCol);
+							worksheet.mergeCells(1, priorityCol, 2, priorityCol);
+							worksheet.mergeCells(1, memoCol, 2, memoCol);
+							let stepCol = stepStartCol;
+							for (let i = 1; i <= maxSteps; i++) {
+								worksheet.mergeCells(1, stepCol, 1, stepCol + 1);
+								stepCol += 2;
+							}
+
+							const rowCount = worksheet.rowCount;
+							const colCount = wsData[0].length;
+							const borderStyle = {
+								top: {
+									style: 'thin'
+								},
+								left: {
+									style: 'thin'
+								},
+								bottom: {
+									style: 'thin'
+								},
+								right: {
+									style: 'thin'
+								}
+							};
+							for (let r = 1; r <= rowCount; r++) {
+								for (let c = 1; c <= colCount; c++) {
+									worksheet.getCell(r, c).border = borderStyle;
+								}
+							}
+							for (let r = 1; r <= rowCount; r++) {
+								for (let c = 1; c <= colCount; c++) {
+									const cell = worksheet.getCell(r, c);
+									if (r <= 2) {
+										cell.alignment = {
+											horizontal: 'center',
+											vertical: 'middle'
+										};
+									} else {
+										cell.alignment = {
+											vertical: 'top'
+										};
+									}
+								}
+							}
+
+							worksheet.columns.forEach((col, idx) => {
+								const colIdx = idx + 1;
+								if (colIdx >= levelStartCol && colIdx <= levelEndCol) {
+									col.width = 16;
+								} else if (colIdx === titleCol) col.width = 20;
+								else if (colIdx === precondCol) col.width = 16;
+								else if (colIdx === priorityCol) col.width = 10;
+								else if (colIdx === memoCol) col.width = 16;
+								else col.width = 20;
+							});
+						});
+
+						const buffer = await workbook.xlsx.writeBuffer();
+						const blob = new Blob([buffer], {
+							type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+						});
+						saveAs(blob, `测试用例_${new Date().toISOString().slice(0,10)}.xlsx`);
+						showToast(`✅ 成功导出 ${rows.length} 条用例（${groupKeys.length}个Sheet）`, 'success');
+					} catch (err) {
+						console.error(err);
+						showToast('导出失败：' + err.message, 'error');
+					}
+				}
 
 				// ---------- 示例数据 ----------
 				function fillDemo() {
-					/* ... */ }
+					const demos = [{
+							title: '登录功能正常验证',
+							precondition: '已注册账号且未登录',
+							levels: ['移动端', '登录', ''],
+							steps: [{
+								step: '打开登录页',
+								expected: '显示登录表单'
+							}, {
+								step: '输入正确的用户名和密码',
+								expected: '输入框正常接收'
+							}, {
+								step: '点击登录按钮',
+								expected: '登录成功，跳转至首页'
+							}],
+							priority: 'P0',
+							remark: '冒烟测试'
+						},
+						{
+							title: '登录密码错误提示',
+							precondition: '已注册账号',
+							levels: ['Web端', '登录', ''],
+							steps: [{
+								step: '打开登录页',
+								expected: '显示登录表单'
+							}, {
+								step: '输入正确的用户名，错误的密码',
+								expected: '输入框正常接收'
+							}, {
+								step: '点击登录按钮',
+								expected: '提示“用户名或密码错误”'
+							}],
+							priority: 'P1',
+							remark: ''
+						},
+						{
+							title: '搜索功能验证',
+							precondition: '已登录',
+							levels: ['移动端', '搜索'],
+							steps: [{
+								step: '在搜索框输入关键词',
+								expected: '输入框显示关键词'
+							}, {
+								step: '点击搜索按钮',
+								expected: '显示相关结果列表'
+							}],
+							priority: 'P1',
+							remark: ''
+						},
+						{
+							title: '购物车添加商品',
+							precondition: '已登录，商品有库存',
+							levels: ['Web端', '购物车'],
+							steps: [{
+								step: '进入商品详情页',
+								expected: '页面加载成功'
+							}, {
+								step: '点击“加入购物车”',
+								expected: '购物车数量增加，提示添加成功'
+							}],
+							priority: 'P0',
+							remark: '核心流程'
+						}
+					];
+
+					if (rows.length > 0 && !confirm('当前已有数据，追加示例用例吗？')) return;
+
+					const maxOrder = rows.reduce((max, r) => Math.max(max, r.order || 0), 0);
+					let currentOrder = maxOrder + 1;
+					const batch = db.batch();
+					demos.forEach(d => {
+						const newData = {
+							title: d.title,
+							precondition: d.precondition || '',
+							levels: d.levels || [],
+							steps: d.steps.map(s => ({
+								step: s.step,
+								expected: s.expected
+							})),
+							priority: d.priority || '',
+							remark: d.remark || '',
+							order: currentOrder++,
+							createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+							updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+						};
+						const ref = db.collection('testcases').doc();
+						batch.set(ref, newData);
+					});
+					batch.commit()
+						.then(() => showToast(`✅ 已添加 ${demos.length} 条示例用例`, 'success'))
+						.catch(err => showToast('添加示例失败：' + err.message, 'error'));
+				}
 
 				// ---------- 从 Firestore 实时同步 ----------
 				function startDataSync() {
-					/* ... */ }
+					if (unsubscribe) unsubscribe();
+					unsubscribe = db.collection('testcases')
+						.orderBy('order', 'asc')
+						.onSnapshot((snapshot) => {
+							rows = [];
+							snapshot.forEach((doc) => {
+								const data = doc.data();
+								rows.push({
+									id: doc.id,
+									order: data.order || 0,
+									title: data.title || '',
+									precondition: data.precondition || '',
+									priority: data.priority || 'P0',
+									remark: data.remark || '',
+									levels: data.levels || [],
+									steps: data.steps || []
+								});
+							});
+							renderTable();
+						}, (error) => {
+							console.error('监听数据失败:', error);
+							showToast('数据同步失败，请检查网络', 'error');
+						});
+				}
 
-				// ========== ★★★ 核心修改：renderTable 将操作列移至左侧 ★★★ ==========
+				// ======================== 核心：renderTable 操作列移至左侧 ========================
 				function renderTable() {
 					const hasData = rows.length > 0;
 					rowCount.textContent = rows.length;
@@ -1796,7 +3049,7 @@
 
 					// 定义列宽（固定）
 					const W = {
-						action: 180, // 左侧操作列（含复选框）
+						action: 180,
 						no: 50,
 						level: 60,
 						title: 120,
@@ -1831,7 +3084,7 @@
 							`<th colspan="2" class="group-header" style="text-align:center; width:${totalStepWidth}px; min-width:${totalStepWidth}px; max-width:${totalStepWidth}px;">${prefix} ${i}</th>`;
 					}
 					headerHtml += `</tr><tr>`;
-					// 第二行：子列头（No. 和操作列已被 rowspan 占用，不在此生成）
+					// 第二行：子列头（操作列和 No. 已被 rowspan 占用，不在此生成）
 					if (displayLevelCount > 0) {
 						for (let i = 0; i < displayLevelCount; i++) {
 							headerHtml +=
@@ -1881,12 +3134,12 @@
 						const truncatedLevels = paddedLevels.map(lv => truncate(lv, 10));
 
 						bodyHtml += `<tr class="main-row" data-index="${index}" style="cursor:pointer;">`;
-						// 第一列：操作列（复选框 + 按钮）
+						// 第一列：操作列（顺序：拖拽手柄、复选框、编辑、复制、删除）
 						bodyHtml += `<td style="text-align:center; width:${W.action}px; min-width:${W.action}px; max-width:${W.action}px; white-space:nowrap;">
-                    <input type="checkbox" class="row-checkbox" data-index="${index}" style="margin-right:4px;">
                     <span class="drag-handle-row" draggable="true" title="拖拽排序" style="cursor:grab;margin-right:2px;">☰</span>
-                    <button class="btn-action copy" data-index="${index}" title="复制" style="font-size:14px;">📋</button>
+                    <input type="checkbox" class="row-checkbox" data-index="${index}" style="margin-right:4px;">
                     <button class="btn-action edit" data-index="${index}" title="编辑" style="font-size:14px;">✎</button>
+                    <button class="btn-action copy" data-index="${index}" title="复制" style="font-size:14px;">📋</button>
                     <button class="btn-action delete" data-index="${index}" title="删除" style="font-size:14px;">✕</button>
                 </td>`;
 						// 序号
@@ -1971,13 +3224,49 @@
 				let currentEditTarget = null;
 
 				function openModal(targetKey) {
-					/* ... */ }
+					currentEditTarget = targetKey;
+					const config = fieldConfig[targetKey];
+					if (!config) return;
+					modalTitle.textContent = `编辑「${config.label}」`;
+					modalLabel.value = config.label;
+					if (config.showDefault !== false) {
+						modalDefaultGroup.style.display = 'block';
+						modalDefault.value = config.defaultValue || '';
+					} else {
+						modalDefaultGroup.style.display = 'none';
+					}
+					modalOverlay.classList.add('active');
+					modalLabel.focus();
+					modalLabel.select();
+				}
 
 				function closeModal() {
-					/* ... */ }
+					modalOverlay.classList.remove('active');
+					currentEditTarget = null;
+				}
 
 				function confirmModal() {
-					/* ... */ }
+					if (!currentEditTarget) return;
+					const target = currentEditTarget;
+					const newLabel = modalLabel.value.trim();
+					if (!newLabel) {
+						showToast('显示名称不能为空', 'error');
+						return;
+					}
+					const config = fieldConfig[target];
+					config.label = newLabel;
+					if (config.showDefault !== false) {
+						const newDefault = modalDefault.value.trim();
+						config.defaultValue = newDefault;
+					}
+					saveConfig();
+					applyFieldLabels();
+					renderLevels(getLevelValues());
+					renderSteps(getStepValues());
+					renderTable();
+					showToast(`已更新「${newLabel}」`, 'success');
+					closeModal();
+				}
 
 				// ---------- 初始化 ----------
 				function init() {
@@ -1990,11 +3279,154 @@
 					initDragDrop();
 					bindCheckAll();
 
-					// 事件绑定（与您原来完全相同，无需改动）
-					// ... 此处省略所有 addEventListener，因为与原来一致 ...
+					// 事件绑定
+					levelsToggleHeader.addEventListener('click', toggleLevels);
+					editLevelsTitle.addEventListener('click', function(e) {
+						e.stopPropagation();
+						openEditLevels();
+					});
 
-					// 特别注意：由于操作列移至左侧，原来右侧的拖拽事件仍绑定在 drag-handle-row 上，现在在左侧，但事件委托仍有效。
-					// 表格事件委托（点击复制、编辑、删除）仍使用 tableBody 委托，无需改动。
+					editLevelsCancel.addEventListener('click', closeEditLevels);
+					editLevelsOverlay.addEventListener('click', function(e) {
+						if (e.target === editLevelsOverlay) closeEditLevels();
+					});
+					editLevelsSave.addEventListener('click', saveEditLevels);
+					editLevelsAddBtn.addEventListener('click', editLevelsAddRow);
+					editLevelsRemoveBtn.addEventListener('click', editLevelsRemoveLastRow);
+
+					addLevelBtn.addEventListener('click', addLevel);
+					removeLevelBtn.addEventListener('click', removeLastLevel);
+
+					document.querySelectorAll('.edit-icon[data-target]').forEach(btn => {
+						btn.addEventListener('click', function(e) {
+							const target = this.getAttribute('data-target');
+							openModal(target);
+						});
+					});
+					document.getElementById('editSectionTitle').addEventListener('click', function() {
+						openModal('sectionTitle');
+					});
+
+					modalConfirm.addEventListener('click', confirmModal);
+					modalCancel.addEventListener('click', closeModal);
+					modalOverlay.addEventListener('click', function(e) {
+						if (e.target === modalOverlay) closeModal();
+					});
+					modalLabel.addEventListener('keydown', function(e) {
+						if (e.key === 'Enter') confirmModal();
+					});
+					modalDefault.addEventListener('keydown', function(e) {
+						if (e.key === 'Enter') confirmModal();
+					});
+
+					editCaseSave.addEventListener('click', saveEditCase);
+					editCaseCancel.addEventListener('click', closeEditCase);
+					editOverlay.addEventListener('click', function(e) {
+						if (e.target === editOverlay) closeEditCase();
+					});
+					editAddStep.addEventListener('click', editAddStepHandler);
+					editCaseLevelAddBtn.addEventListener('click', editCaseLevelAdd);
+					editCaseLevelRemoveBtn.addEventListener('click', editCaseLevelRemoveLast);
+
+					btnAdd.addEventListener('click', addRow);
+					btnReset.addEventListener('click', resetInputs);
+					btnFillDemo.addEventListener('click', fillDemo);
+					btnImportTitles.addEventListener('click', importTitlesFromParten);
+					btnExportTop.addEventListener('click', exportExcel);
+					btnExportBottom.addEventListener('click', exportExcel);
+
+					addStepBtn.addEventListener('click', addStep);
+					removeStepBtn.addEventListener('click', removeLastStep);
+					addStepBtnBottom.addEventListener('click', addStep);
+					removeStepBtnBottom.addEventListener('click', removeLastStep);
+
+					deleteSelected.addEventListener('click', deleteSelectedRows);
+					clearAllCases.addEventListener('click', clearAllCasesHandler);
+
+					document.querySelectorAll('.input-group input, .input-group textarea, .input-group select').forEach(
+					el => {
+						el.addEventListener('keydown', function(e) {
+							if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+								e.preventDefault();
+								addRow();
+							}
+						});
+					});
+
+					// ----- 表格事件委托（一次性） -----
+					tableBody.addEventListener('click', function(e) {
+						const btn = e.target.closest('.btn-action');
+						if (!btn) return;
+						e.stopPropagation();
+						const index = parseInt(btn.dataset.index, 10);
+						if (isNaN(index)) return;
+						if (btn.classList.contains('edit')) openEditCase(index);
+						else if (btn.classList.contains('delete')) deleteRow(index);
+						else if (btn.classList.contains('copy')) copyRow(index);
+					});
+
+					// 拖拽排序（插入式）
+					tableBody.addEventListener('dragstart', function(e) {
+						const row = e.target.closest('tr.main-row');
+						if (!row) return;
+						if (!e.target.classList.contains('drag-handle-row')) {
+							e.preventDefault();
+							return;
+						}
+						const index = row.dataset.index;
+						e.dataTransfer.setData('text/plain', index);
+						e.dataTransfer.effectAllowed = 'move';
+						row.classList.add('dragging');
+					});
+
+					tableBody.addEventListener('dragover', function(e) {
+						e.preventDefault();
+						e.dataTransfer.dropEffect = 'move';
+						const targetRow = e.target.closest('tr.main-row');
+						if (targetRow) {
+							tableBody.querySelectorAll('tr.main-row').forEach(r => r.classList.remove('drag-over'));
+							targetRow.classList.add('drag-over');
+						}
+					});
+
+					tableBody.addEventListener('dragleave', function(e) {
+						const targetRow = e.target.closest('tr.main-row');
+						if (targetRow) targetRow.classList.remove('drag-over');
+					});
+
+					tableBody.addEventListener('drop', function(e) {
+						e.preventDefault();
+						const targetRow = e.target.closest('tr.main-row');
+						if (!targetRow) return;
+						targetRow.classList.remove('drag-over');
+
+						const dragIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+						const dropIndex = parseInt(targetRow.dataset.index, 10);
+						if (isNaN(dragIndex) || isNaN(dropIndex) || dragIndex === dropIndex) return;
+
+						const newRows = [...rows];
+						const [movedItem] = newRows.splice(dragIndex, 1);
+						let insertIndex = dropIndex;
+						if (dropIndex > dragIndex) insertIndex = dropIndex - 1;
+						newRows.splice(insertIndex, 0, movedItem);
+
+						const batch = db.batch();
+						newRows.forEach((row, idx) => {
+							batch.update(db.collection('testcases').doc(row.id), {
+								order: idx
+							});
+						});
+						batch.commit()
+							.then(() => showToast('顺序已更新', 'success'))
+							.catch(err => showToast('排序失败：' + err.message, 'error'));
+					});
+
+					tableBody.addEventListener('dragend', function(e) {
+						const row = e.target.closest('tr.main-row');
+						if (row) row.classList.remove('dragging');
+						tableBody.querySelectorAll('tr.main-row.drag-over').forEach(r => r.classList.remove(
+							'drag-over'));
+					});
 
 					renderTable();
 					titleInput.focus();
