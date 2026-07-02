@@ -1,15 +1,20 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>TestCase-V1.2</title>
 		<!-- Firebase SDK -->
-		<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-		<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-		<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">
+		</script>
+		<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js">
+		</script>
+		<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js">
+		</script>
+		<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js">
+		</script>
+		<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js">
+		</script>
 		<style>
 			/* ---------- 全局 ---------- */
 			* {
@@ -761,7 +766,7 @@
 				border-radius: 20px;
 				padding: 24px 28px 28px;
 				box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
-				overflow: hidden;
+				overflow: visible;
 				transition: box-shadow 0.2s;
 			}
 
@@ -851,13 +856,12 @@
 				overflow-x: auto;
 				border-radius: 14px;
 				border: 1px solid #eef2f7;
+				position: relative;
 			}
 
-			/* ★★★ 表格固定列（左侧操作列） ★★★ */
 			table {
 				width: 100%;
-				border-collapse: separate;
-				border-spacing: 0;
+				border-collapse: collapse;
 				font-size: 14px;
 				min-width: 800px;
 			}
@@ -866,10 +870,10 @@
 				background: #f7faff;
 			}
 
+			/* ===== 表头全部居中对齐，且不换行 ===== */
 			thead th {
 				padding: 8px 10px;
-				text-align: center;
-				/* 所有标题居中 */
+				text-align: center !important;
 				font-weight: 600;
 				color: #1a2332;
 				border-bottom: 2px solid #e2e9f2;
@@ -880,49 +884,52 @@
 				top: 0;
 				background: #f7faff;
 				z-index: 2;
+				min-width: 80px;
 				border: 1px solid #ffffff;
-				overflow: hidden;
-				text-overflow: ellipsis;
 			}
 
-			/* 左侧操作列固定 */
-			thead th:first-child,
-			tbody td:first-child {
-				position: sticky !important;
-				left: 0 !important;
-				z-index: 10 !important;
-				background: #ffffff !important;
-				border-right: 2px solid #dce3ed !important;
-				box-shadow: 2px 0 12px rgba(0, 0, 0, 0.10) !important;
-				min-width: 180px;
-				max-width: 180px;
-				width: 180px;
+			/* --- 操作列 – 取消固定，去掉边框和阴影 --- */
+			thead th:last-child,
+			tbody td:last-child {
+				width: 120px;
+				min-width: 120px;
+				max-width: 120px;
 				text-align: center;
+				background: transparent;
 			}
 
-			thead th:first-child {
-				background: #f7faff !important;
-				z-index: 11 !important;
-				/* 高于其他表头，解决悬浮问题 */
+			/* 表头操作列背景保持统一 */
+			thead th:last-child {
+				background: #f7faff;
 			}
 
-			tbody tr:hover td:first-child {
-				background: #f8fbfe !important;
+			/* 悬停时操作列背景跟随行 */
+			tbody tr:hover td:last-child {
+				background: #f8fbfe;
 			}
 
-			/* 其他列 */
-			thead th:not(:first-child),
-			tbody td:not(:first-child) {
+			/* 其他列保持默认 */
+			thead th:not(:last-child),
+			tbody td:not(:last-child) {
 				position: relative;
 				z-index: 1;
-				overflow: hidden;
-				text-overflow: ellipsis;
 			}
 
+			/* 步骤标题列 */
 			thead th.group-header {
 				text-align: center;
 				background: #eef3f9;
 				border-bottom: 1px solid #dce3ed;
+				min-width: 180px;
+			}
+
+			/* 手顺/期待值列宽度 180px，允许换行（表头不换行，数据可换行） */
+			thead th:not(.group-header):not(:last-child) {
+				min-width: 180px;
+				max-width: 180px;
+				width: 180px;
+				white-space: normal;
+				word-break: break-word;
 			}
 
 			tbody td {
@@ -931,8 +938,12 @@
 				color: #1f2a3f;
 				vertical-align: middle;
 				word-break: break-word;
-				overflow: hidden;
-				text-overflow: ellipsis;
+			}
+
+			/* 数据行中的手顺/期待值允许换行 */
+			tbody td:not(:last-child):not(:nth-child(-n+2)) {
+				white-space: normal;
+				word-break: break-word;
 			}
 
 			tbody tr:hover {
@@ -984,6 +995,7 @@
 				cursor: pointer;
 			}
 
+			/* 拖拽样式 */
 			.main-row.dragging {
 				opacity: 0.4;
 				background: #e8f5ee;
@@ -1003,40 +1015,72 @@
 				cursor: grabbing;
 			}
 
+			/* ===== 详情行 – 全部居左对齐 ===== */
 			.detail-row td {
 				padding: 12px 16px;
 				background: #f7faff;
 				border-bottom: 1px solid #dce3ed;
+				text-align: left !important;
+				vertical-align: top;
 			}
 
 			.detail-row .detail-content {
 				display: flex;
 				flex-direction: column;
 				gap: 8px;
+				text-align: left !important;
 			}
 
 			.detail-row .detail-content .detail-item {
 				display: flex;
 				gap: 8px;
 				align-items: flex-start;
+				text-align: left !important;
 			}
 
 			.detail-row .detail-content .detail-item .label {
 				font-weight: 600;
 				color: #2d3a4f;
 				min-width: 80px;
+				text-align: left !important;
+				flex-shrink: 0;
 			}
 
 			.detail-row .detail-content .detail-item .value {
 				color: #1f2a3f;
 				white-space: pre-wrap;
 				word-break: break-word;
+				text-align: left !important;
 			}
 
 			.detail-row .detail-content .step-detail {
 				border-top: 1px solid #e2e9f2;
 				padding-top: 6px;
 				margin-top: 4px;
+				text-align: left !important;
+			}
+
+			.detail-row .detail-content .step-detail strong {
+				text-align: left !important;
+			}
+
+			.detail-row .detail-content .step-detail>div {
+				margin-top: 6px;
+				border-top: 1px dashed #e2e9f2;
+				padding-top: 4px;
+				text-align: left !important;
+			}
+
+			.detail-row .detail-content .step-detail>div>div {
+				text-align: left !important;
+			}
+
+			.detail-row .detail-content .step-detail>div>div strong {
+				text-align: left !important;
+			}
+
+			.detail-row .detail-content .step-detail>div>div span {
+				text-align: left !important;
 			}
 
 			.empty-state {
@@ -1458,10 +1502,18 @@
 					width: 100%;
 				}
 
-				thead th:first-child,
-				tbody td:first-child {
-					min-width: 140px;
-					width: 140px;
+				/* 移动端操作列宽度 */
+				thead th:last-child,
+				tbody td:last-child {
+					min-width: 80px;
+					width: 80px;
+				}
+
+				/* 移动端步骤列适当缩小 */
+				thead th:not(.group-header):not(:last-child) {
+					min-width: 120px;
+					max-width: 120px;
+					width: 120px;
 				}
 			}
 		</style>
@@ -1740,6 +1792,7 @@
 					appId: "1:877513062435:web:e5ecf590b8bf1be5e79996",
 					measurementId: "G-QBF3XQTDQ1"
 				};
+
 				firebase.initializeApp(firebaseConfig);
 				const db = firebase.firestore();
 				const auth = firebase.auth();
@@ -2008,12 +2061,12 @@
 					for (let i = 0; i < levelCount; i++) {
 						const val = values && values[i] !== undefined ? values[i] : '';
 						html += `
-                    <div class="level-row" data-level-index="${i}">
-                        <span class="level-index">${i+1}</span>
-                        <input type="text" class="level-input" placeholder="输入第${i+1}列" value="${escapeHtml(val)}" />
-                        ${levelCount > 1 ? `<button class="btn-del-level" data-level="${i}" title="删除此行">✕</button>` : ''}
-                    </div>
-                `;
+                <div class="level-row" data-level-index="${i}">
+                    <span class="level-index">${i+1}</span>
+                    <input type="text" class="level-input" placeholder="输入第${i+1}列" value="${escapeHtml(val)}" />
+                    ${levelCount > 1 ? `<button class="btn-del-level" data-level="${i}" title="删除此行">✕</button>` : ''}
+                </div>
+            `;
 					}
 					levelsContainer.innerHTML = html;
 					levelCountDisplay.textContent = levelCount;
@@ -2035,7 +2088,7 @@
 						inp.addEventListener('keydown', function(e) {
 							if (e.key === 'Enter') {
 								e.preventDefault();
-								addRow();
+								addLevel();
 							}
 						});
 					});
@@ -2095,12 +2148,12 @@
 					let html = '';
 					values.forEach((val, idx) => {
 						html += `
-                    <div class="edit-level-item" data-level-index="${idx}">
-                        <span class="level-index">${idx+1}</span>
-                        <input type="text" class="edit-level-input" value="${escapeHtml(val)}" />
-                        ${values.length > 1 ? `<button class="btn-sm-icon delete" data-level-index="${idx}" title="删除此行">✕</button>` : ''}
-                    </div>
-                `;
+                <div class="edit-level-item" data-level-index="${idx}">
+                    <span class="level-index">${idx+1}</span>
+                    <input type="text" class="edit-level-input" value="${escapeHtml(val)}" />
+                    ${values.length > 1 ? `<button class="btn-sm-icon delete" data-level-index="${idx}" title="删除此行">✕</button>` : ''}
+                </div>
+            `;
 					});
 					editLevelsContainer.innerHTML = html;
 					editLevelsRemoveBtn.disabled = (values.length <= 1);
@@ -2188,24 +2241,24 @@
 							expected: ''
 						};
 						html += `
-                    <div class="step-row" draggable="true" data-step-index="${idx}">
-                        <div class="drag-handle" title="拖拽调整顺序">☰</div>
-                        <div class="step-group-label">
-                            <span class="step-number">${prefix} ${idx}</span>
-                            ${idx > 1 ? `<button class="btn-del-step" data-step="${idx}" title="删除此步骤">✕</button>` : ''}
+                <div class="step-row" draggable="true" data-step-index="${idx}">
+                    <div class="drag-handle" title="拖拽调整顺序">☰</div>
+                    <div class="step-group-label">
+                        <span class="step-number">${prefix} ${idx}</span>
+                        ${idx > 1 ? `<button class="btn-del-step" data-step="${idx}" title="删除此步骤">✕</button>` : ''}
+                    </div>
+                    <div class="step-fields">
+                        <div class="field-item">
+                            <label>${actionLabel}</label>
+                            <textarea class="step-action-input" placeholder="${actionLabel} ${idx} ..." draggable="false">${escapeHtml(val.step)}</textarea>
                         </div>
-                        <div class="step-fields">
-                            <div class="field-item">
-                                <label>${actionLabel}</label>
-                                <textarea class="step-action-input" placeholder="${actionLabel} ${idx} ..." draggable="false">${escapeHtml(val.step)}</textarea>
-                            </div>
-                            <div class="field-item">
-                                <label>${expectedLabel}</label>
-                                <textarea class="step-expected-input" placeholder="${expectedLabel} ${idx} ..." draggable="false">${escapeHtml(val.expected)}</textarea>
-                            </div>
+                        <div class="field-item">
+                            <label>${expectedLabel}</label>
+                            <textarea class="step-expected-input" placeholder="${expectedLabel} ${idx} ..." draggable="false">${escapeHtml(val.expected)}</textarea>
                         </div>
                     </div>
-                `;
+                </div>
+            `;
 					}
 					stepsContainer.innerHTML = html;
 					stepCountDisplay.textContent = count;
@@ -2222,7 +2275,7 @@
 						inp.addEventListener('keydown', function(e) {
 							if (e.key === 'Enter' && !e.shiftKey) {
 								e.preventDefault();
-								addRow();
+								addStep();
 							}
 						});
 					});
@@ -2364,6 +2417,197 @@
 					renderSteps(stepVals);
 					titleInput.focus();
 					showToast('输入区域已重置', 'info');
+				}
+
+				// ---------- 表格渲染 ----------
+				function renderTable() {
+					const hasData = rows.length > 0;
+					rowCount.textContent = rows.length;
+					badgeCount.textContent = rows.length + ' 条';
+					emptyState.style.display = hasData ? 'none' : 'block';
+
+					let maxLevels = 0;
+					rows.forEach(r => {
+						if (r.levels && r.levels.length > maxLevels) maxLevels = r.levels.length;
+					});
+					if (maxLevels < 1) maxLevels = 1;
+
+					const levelHasData = [];
+					for (let i = 0; i < maxLevels; i++) {
+						let has = false;
+						for (let r of rows) {
+							if (r.levels && r.levels[i] && r.levels[i].trim() !== '') {
+								has = true;
+								break;
+							}
+						}
+						levelHasData.push(has);
+					}
+					const activeLevelIndices = levelHasData.map((v, idx) => v ? idx : -1).filter(idx => idx >= 0);
+					const displayLevelCount = activeLevelIndices.length;
+
+					let maxSteps = 0;
+					rows.forEach(r => {
+						if (r.steps && r.steps.length > maxSteps) maxSteps = r.steps.length;
+					});
+					if (maxSteps < 1) maxSteps = 1;
+
+					const prefix = getStepGroupPrefix();
+					const actionLabel = getStepActionLabel();
+					const expectedLabel = getStepExpectedLabel();
+					const levelTitle = getLevelsTitle();
+
+					// 构建表头
+					let headerHtml = `<thead><tr>`;
+					// 选择框列 35px，No列 50px（加宽，防止换行）
+					headerHtml +=
+						`<th rowspan="2" style="width:35px;min-width:35px;text-align:center;"><input type="checkbox" id="checkAllHead"></th>`;
+					headerHtml +=
+						`<th rowspan="2" style="width:50px;min-width:50px;text-align:center;white-space:nowrap;">No.</th>`;
+					if (displayLevelCount > 0) {
+						headerHtml +=
+							`<th colspan="${displayLevelCount}" class="group-header" style="text-align:center;">${levelTitle}</th>`;
+					}
+					headerHtml += `<th rowspan="2" style="min-width:120px;">${fieldConfig.title.label}</th>`;
+					headerHtml += `<th rowspan="2" style="min-width:100px;">${fieldConfig.precondition.label}</th>`;
+					headerHtml += `<th rowspan="2" style="min-width:80px;">${fieldConfig.priority.label}</th>`;
+					headerHtml += `<th rowspan="2" style="min-width:100px;">${fieldConfig.remark.label}</th>`;
+					for (let i = 1; i <= maxSteps; i++) {
+						headerHtml +=
+							`<th colspan="2" class="group-header" style="text-align:center; min-width:360px; max-width:360px; width:360px;">${prefix} ${i}</th>`;
+					}
+					headerHtml += `<th rowspan="2" style="width:120px;min-width:120px;text-align:center;">操作</th>`;
+					headerHtml += `</tr><tr>`;
+					if (displayLevelCount > 0) {
+						for (let i = 0; i < displayLevelCount; i++) {
+							headerHtml +=
+								`<th style="text-align:center;min-width:50px;max-width:50px;width:50px;">${activeLevelIndices[i] + 1}</th>`;
+						}
+					}
+					for (let i = 1; i <= maxSteps; i++) {
+						headerHtml +=
+							`<th style="min-width:180px; max-width:180px; width:180px; white-space:normal; word-break:break-word;">${actionLabel}</th>
+                            <th style="min-width:180px; max-width:180px; width:180px; white-space:normal; word-break:break-word;">${expectedLabel}</th>`;
+					}
+					headerHtml += `</tr></thead>`;
+					tableHead.innerHTML = headerHtml;
+
+					if (!hasData) {
+						tableBody.innerHTML = '';
+						return;
+					}
+
+					let bodyHtml = '';
+					rows.forEach((row, index) => {
+						const levels = row.levels || [];
+						const paddedLevels = [];
+						for (let idx of activeLevelIndices) {
+							paddedLevels.push(idx < levels.length ? levels[idx] : '');
+						}
+						const steps = row.steps || [];
+						const paddedSteps = [];
+						for (let i = 0; i < maxSteps; i++) {
+							if (i < steps.length) {
+								paddedSteps.push({
+									step: steps[i].step || '',
+									expected: steps[i].expected || ''
+								});
+							} else {
+								paddedSteps.push({
+									step: '',
+									expected: ''
+								});
+							}
+						}
+
+						const truncatedTitle = truncate(row.title, 12);
+						const truncatedPrecond = truncate(row.precondition, 12);
+						const truncatedPriority = truncate(row.priority, 8);
+						const truncatedRemark = truncate(row.remark, 12);
+						const truncatedLevels = paddedLevels.map(lv => truncate(lv, 10));
+
+						bodyHtml += `<tr class="main-row" data-index="${index}" style="cursor:pointer;">`;
+						bodyHtml +=
+							`<td style="text-align:center;"><input type="checkbox" class="row-checkbox" data-index="${index}"></td>`;
+						bodyHtml += `<td class="row-index">${index + 1}</td>`;
+						truncatedLevels.forEach(lv => {
+							bodyHtml +=
+								`<td style="min-width:50px;max-width:50px;width:50px;text-align:center;">${escapeHtml(lv)}</td>`;
+						});
+						bodyHtml += `
+                <td><strong>${escapeHtml(truncatedTitle)}</strong></td>
+                <td style="white-space:pre-wrap;">${escapeHtml(truncatedPrecond)}</td>
+                <td><span class="priority-badge" style="background:#eef3f9;padding:2px 10px;border-radius:12px;font-weight:600;font-size:13px;color:#1a2332;">${escapeHtml(truncatedPriority)}</span></td>
+                <td style="white-space:pre-wrap;">${escapeHtml(truncatedRemark)}</td>`;
+						for (let i = 0; i < maxSteps; i++) {
+							const stepText = (i < steps.length) ? steps[i].step : '';
+							const expectedText = (i < steps.length) ? steps[i].expected : '';
+							bodyHtml +=
+								`<td style="min-width:180px; max-width:180px; width:180px; white-space:normal; word-break:break-word;">${escapeHtml(stepText)}</td>
+                            <td style="min-width:180px; max-width:180px; width:180px; white-space:normal; word-break:break-word;">${escapeHtml(expectedText)}</td>`;
+						}
+						bodyHtml += `
+                <td style="text-align:center;white-space:nowrap;width:120px;min-width:120px;max-width:120px;">
+                    <span class="drag-handle-row" draggable="true" title="拖拽排序" style="cursor:grab;margin-right:4px;">☰</span>
+                    <button class="btn-action copy" data-index="${index}" title="复制">📋</button>
+                    <button class="btn-action edit" data-index="${index}" title="编辑">✎</button>
+                    <button class="btn-action delete" data-index="${index}" title="删除">✕</button>
+                </td>
+            </tr>`;
+
+						// 详情行
+						const totalCols = 2 + displayLevelCount + 4 + 2 * maxSteps + 1;
+						bodyHtml += `<tr class="detail-row" data-index="${index}" style="display:none;">`;
+						bodyHtml +=
+							`<td colspan="${totalCols}" style="padding: 12px 16px; background: #f7faff; text-align:left !important;">`;
+						bodyHtml += `<div class="detail-content" style="text-align:left !important;">`;
+						const nonEmptyLevels = levels.filter(l => l && l.trim() !== '');
+						if (nonEmptyLevels.length > 0) {
+							bodyHtml +=
+								`<div class="detail-item" style="text-align:left !important;"><span class="label" style="text-align:left !important;">${fieldConfig.levelsSectionTitle.label}：</span><span class="value" style="text-align:left !important;">${escapeHtml(nonEmptyLevels.join(' / '))}</span></div>`;
+						}
+						bodyHtml +=
+							`<div class="detail-item" style="text-align:left !important;"><span class="label" style="text-align:left !important;">${fieldConfig.title.label}：</span><span class="value" style="text-align:left !important;">${escapeHtml(row.title)}</span></div>`;
+						bodyHtml +=
+							`<div class="detail-item" style="text-align:left !important;"><span class="label" style="text-align:left !important;">${fieldConfig.precondition.label}：</span><span class="value" style="text-align:left !important;">${escapeHtml(row.precondition)}</span></div>`;
+						bodyHtml +=
+							`<div class="detail-item" style="text-align:left !important;"><span class="label" style="text-align:left !important;">${fieldConfig.priority.label}：</span><span class="value" style="text-align:left !important;">${escapeHtml(row.priority)}</span></div>`;
+						bodyHtml +=
+							`<div class="detail-item" style="text-align:left !important;"><span class="label" style="text-align:left !important;">${fieldConfig.remark.label}：</span><span class="value" style="text-align:left !important;">${escapeHtml(row.remark)}</span></div>`;
+						if (steps.length > 0) {
+							bodyHtml +=
+								`<div class="step-detail" style="text-align:left !important;"><strong>步骤详情：</strong>`;
+							steps.forEach((s, i) => {
+								bodyHtml += `<div style="margin-top:6px;border-top:1px dashed #e2e9f2;padding-top:4px;text-align:left !important;">
+                        <div style="text-align:left !important;"><strong>Step ${i+1}</strong></div>
+                        <div style="text-align:left !important;"><span style="font-weight:500;text-align:left !important;">${getStepActionLabel()}：</span><span style="white-space:pre-wrap;text-align:left !important;">${escapeHtml(s.step)}</span></div>
+                        <div style="text-align:left !important;"><span style="font-weight:500;text-align:left !important;">${getStepExpectedLabel()}：</span><span style="white-space:pre-wrap;text-align:left !important;">${escapeHtml(s.expected)}</span></div>
+                    </div>`;
+							});
+							bodyHtml += `</div>`;
+						} else {
+							bodyHtml +=
+								`<div class="detail-item" style="text-align:left !important;"><span class="label" style="text-align:left !important;">步骤：</span><span class="value" style="text-align:left !important;">无</span></div>`;
+						}
+						bodyHtml += `</div></td></tr>`;
+					});
+					tableBody.innerHTML = bodyHtml;
+
+					// 行点击展开/收起
+					tableBody.querySelectorAll('.main-row').forEach(row => {
+						row.addEventListener('click', function(e) {
+							if (e.target.closest('.btn-action') || e.target.closest(
+									'input[type="checkbox"]')) return;
+							const index = this.dataset.index;
+							const detailRow = tableBody.querySelector(`.detail-row[data-index="${index}"]`);
+							if (detailRow) {
+								const isVisible = detailRow.style.display !== 'none';
+								detailRow.style.display = isVisible ? 'none' : '';
+							}
+						});
+					});
+
+					updateCheckAllState();
 				}
 
 				// ---------- 全选逻辑 ----------
@@ -2521,12 +2765,12 @@
 					let html = '';
 					values.forEach((val, idx) => {
 						html += `
-                    <div class="edit-level-item" data-level-index="${idx}">
-                        <span class="level-index">${idx+1}</span>
-                        <input type="text" class="edit-case-level-input" value="${escapeHtml(val)}" />
-                        ${values.length > 1 ? `<button class="btn-sm-icon delete" data-level-index="${idx}" title="删除此行">✕</button>` : ''}
-                    </div>
-                `;
+                <div class="edit-level-item" data-level-index="${idx}">
+                    <span class="level-index">${idx+1}</span>
+                    <input type="text" class="edit-case-level-input" value="${escapeHtml(val)}" />
+                    ${values.length > 1 ? `<button class="btn-sm-icon delete" data-level-index="${idx}" title="删除此行">✕</button>` : ''}
+                </div>
+            `;
 					});
 					editCaseLevelsContainer.innerHTML = html;
 					editCaseLevelRemoveBtn.disabled = (values.length <= 1);
@@ -2574,19 +2818,19 @@
 					steps.forEach((item, idx) => {
 						const i = idx + 1;
 						html += `
-                    <div class="edit-step-item" data-step-index="${idx}">
-                        <div class="step-header">
-                            <span class="step-index">Step ${i}</span>
-                            <button class="btn-sm-icon move" data-dir="up" title="上移">↑</button>
-                            <button class="btn-sm-icon move" data-dir="down" title="下移">↓</button>
-                            ${steps.length > 1 ? `<button class="btn-sm-icon delete" data-step-index="${idx}" title="删除此步骤">✕</button>` : ''}
-                        </div>
-                        <div class="step-fields">
-                            <textarea class="edit-step-action" placeholder="${actionLabel} ${i}">${escapeHtml(item.step)}</textarea>
-                            <textarea class="edit-step-expected" placeholder="${expectedLabel} ${i}">${escapeHtml(item.expected)}</textarea>
-                        </div>
+                <div class="edit-step-item" data-step-index="${idx}">
+                    <div class="step-header">
+                        <span class="step-index">Step ${i}</span>
+                        <button class="btn-sm-icon move" data-dir="up" title="上移">↑</button>
+                        <button class="btn-sm-icon move" data-dir="down" title="下移">↓</button>
+                        ${steps.length > 1 ? `<button class="btn-sm-icon delete" data-step-index="${idx}" title="删除此步骤">✕</button>` : ''}
                     </div>
-                `;
+                    <div class="step-fields">
+                        <textarea class="edit-step-action" placeholder="${actionLabel} ${i}">${escapeHtml(item.step)}</textarea>
+                        <textarea class="edit-step-expected" placeholder="${expectedLabel} ${i}">${escapeHtml(item.expected)}</textarea>
+                    </div>
+                </div>
+            `;
 					});
 					editStepsContainer.innerHTML = html;
 					editStepsContainer.querySelectorAll('.move').forEach(btn => {
@@ -2891,68 +3135,64 @@
 				// ---------- 示例数据 ----------
 				function fillDemo() {
 					const demos = [{
-							title: '登录功能正常验证',
-							precondition: '已注册账号且未登录',
-							levels: ['移动端', '登录', ''],
-							steps: [{
-								step: '打开登录页',
-								expected: '显示登录表单'
-							}, {
-								step: '输入正确的用户名和密码',
-								expected: '输入框正常接收'
-							}, {
-								step: '点击登录按钮',
-								expected: '登录成功，跳转至首页'
-							}],
-							priority: 'P0',
-							remark: '冒烟测试'
-						},
-						{
-							title: '登录密码错误提示',
-							precondition: '已注册账号',
-							levels: ['Web端', '登录', ''],
-							steps: [{
-								step: '打开登录页',
-								expected: '显示登录表单'
-							}, {
-								step: '输入正确的用户名，错误的密码',
-								expected: '输入框正常接收'
-							}, {
-								step: '点击登录按钮',
-								expected: '提示“用户名或密码错误”'
-							}],
-							priority: 'P1',
-							remark: ''
-						},
-						{
-							title: '搜索功能验证',
-							precondition: '已登录',
-							levels: ['移动端', '搜索'],
-							steps: [{
-								step: '在搜索框输入关键词',
-								expected: '输入框显示关键词'
-							}, {
-								step: '点击搜索按钮',
-								expected: '显示相关结果列表'
-							}],
-							priority: 'P1',
-							remark: ''
-						},
-						{
-							title: '购物车添加商品',
-							precondition: '已登录，商品有库存',
-							levels: ['Web端', '购物车'],
-							steps: [{
-								step: '进入商品详情页',
-								expected: '页面加载成功'
-							}, {
-								step: '点击“加入购物车”',
-								expected: '购物车数量增加，提示添加成功'
-							}],
-							priority: 'P0',
-							remark: '核心流程'
-						}
-					];
+						title: '登录功能正常验证',
+						precondition: '已注册账号且未登录',
+						levels: ['移动端', '登录', ''],
+						steps: [{
+							step: '打开登录页',
+							expected: '显示登录表单'
+						}, {
+							step: '输入正确的用户名和密码',
+							expected: '输入框正常接收'
+						}, {
+							step: '点击登录按钮',
+							expected: '登录成功，跳转至首页'
+						}],
+						priority: 'P0',
+						remark: '冒烟测试'
+					}, {
+						title: '登录密码错误提示',
+						precondition: '已注册账号',
+						levels: ['Web端', '登录', ''],
+						steps: [{
+							step: '打开登录页',
+							expected: '显示登录表单'
+						}, {
+							step: '输入正确的用户名，错误的密码',
+							expected: '输入框正常接收'
+						}, {
+							step: '点击登录按钮',
+							expected: '提示“用户名或密码错误”'
+						}],
+						priority: 'P1',
+						remark: ''
+					}, {
+						title: '搜索功能验证',
+						precondition: '已登录',
+						levels: ['移动端', '搜索'],
+						steps: [{
+							step: '在搜索框输入关键词',
+							expected: '输入框显示关键词'
+						}, {
+							step: '点击搜索按钮',
+							expected: '显示相关结果列表'
+						}],
+						priority: 'P1',
+						remark: ''
+					}, {
+						title: '购物车添加商品',
+						precondition: '已登录，商品有库存',
+						levels: ['Web端', '购物车'],
+						steps: [{
+							step: '进入商品详情页',
+							expected: '页面加载成功'
+						}, {
+							step: '点击“加入购物车”',
+							expected: '购物车数量增加，提示添加成功'
+						}],
+						priority: 'P0',
+						remark: '核心流程'
+					}];
 
 					if (rows.length > 0 && !confirm('当前已有数据，追加示例用例吗？')) return;
 
@@ -3007,265 +3247,6 @@
 							console.error('监听数据失败:', error);
 							showToast('数据同步失败，请检查网络', 'error');
 						});
-				}
-
-				// ======================== 核心：renderTable 操作列移至左侧 ========================
-				function renderTable() {
-					const hasData = rows.length > 0;
-					rowCount.textContent = rows.length;
-					badgeCount.textContent = rows.length + ' 条';
-					emptyState.style.display = hasData ? 'none' : 'block';
-
-					let maxLevels = 0;
-					rows.forEach(r => {
-						if (r.levels && r.levels.length > maxLevels) maxLevels = r.levels.length;
-					});
-					if (maxLevels < 1) maxLevels = 1;
-
-					const levelHasData = [];
-					for (let i = 0; i < maxLevels; i++) {
-						let has = false;
-						for (let r of rows) {
-							if (r.levels && r.levels[i] && r.levels[i].trim() !== '') {
-								has = true;
-								break;
-							}
-						}
-						levelHasData.push(has);
-					}
-					const activeLevelIndices = levelHasData.map((v, idx) => v ? idx : -1).filter(idx => idx >= 0);
-					const displayLevelCount = activeLevelIndices.length;
-
-					let maxSteps = 0;
-					rows.forEach(r => {
-						if (r.steps && r.steps.length > maxSteps) maxSteps = r.steps.length;
-					});
-					if (maxSteps < 1) maxSteps = 1;
-
-					const prefix = getStepGroupPrefix();
-					const actionLabel = getStepActionLabel();
-					const expectedLabel = getStepExpectedLabel();
-					const levelTitle = getLevelsTitle();
-
-					// 定义列宽（固定）
-					const W = {
-						action: 180,
-						no: 50,
-						level: 60,
-						title: 120,
-						precond: 100,
-						priority: 80,
-						remark: 100,
-						step: 110
-					};
-
-					let headerHtml = `<thead><tr>`;
-					// 第一列：操作（跨两行）
-					headerHtml +=
-						`<th rowspan="2" style="width:${W.action}px; min-width:${W.action}px; max-width:${W.action}px; text-align:center;">操作</th>`;
-					headerHtml +=
-						`<th rowspan="2" style="width:${W.no}px; min-width:${W.no}px; max-width:${W.no}px; text-align:center;">No.</th>`;
-					if (displayLevelCount > 0) {
-						const totalLevelWidth = displayLevelCount * W.level;
-						headerHtml +=
-							`<th colspan="${displayLevelCount}" class="group-header" style="text-align:center; width:${totalLevelWidth}px; min-width:${totalLevelWidth}px; max-width:${totalLevelWidth}px;">${levelTitle}</th>`;
-					}
-					headerHtml +=
-						`<th rowspan="2" style="width:${W.title}px; min-width:${W.title}px; max-width:${W.title}px;">${fieldConfig.title.label}</th>`;
-					headerHtml +=
-						`<th rowspan="2" style="width:${W.precond}px; min-width:${W.precond}px; max-width:${W.precond}px;">${fieldConfig.precondition.label}</th>`;
-					headerHtml +=
-						`<th rowspan="2" style="width:${W.priority}px; min-width:${W.priority}px; max-width:${W.priority}px;">${fieldConfig.priority.label}</th>`;
-					headerHtml +=
-						`<th rowspan="2" style="width:${W.remark}px; min-width:${W.remark}px; max-width:${W.remark}px;">${fieldConfig.remark.label}</th>`;
-					for (let i = 1; i <= maxSteps; i++) {
-						const totalStepWidth = 2 * W.step;
-						headerHtml +=
-							`<th colspan="2" class="group-header" style="text-align:center; width:${totalStepWidth}px; min-width:${totalStepWidth}px; max-width:${totalStepWidth}px;">${prefix} ${i}</th>`;
-					}
-					headerHtml += `</tr><tr>`;
-					// 第二行：子列头（操作列和 No. 已被 rowspan 占用，不在此生成）
-					if (displayLevelCount > 0) {
-						for (let i = 0; i < displayLevelCount; i++) {
-							headerHtml +=
-								`<th style="text-align:center; width:${W.level}px; min-width:${W.level}px; max-width:${W.level}px;">${activeLevelIndices[i] + 1}</th>`;
-						}
-					}
-					for (let i = 1; i <= maxSteps; i++) {
-						headerHtml +=
-							`<th style="width:${W.step}px; min-width:${W.step}px; max-width:${W.step}px;">${actionLabel}</th>
-                               <th style="width:${W.step}px; min-width:${W.step}px; max-width:${W.step}px;">${expectedLabel}</th>`;
-					}
-					headerHtml += `</tr></thead>`;
-					tableHead.innerHTML = headerHtml;
-
-					if (!hasData) {
-						tableBody.innerHTML = '';
-						return;
-					}
-
-					let bodyHtml = '';
-					rows.forEach((row, index) => {
-						const levels = row.levels || [];
-						const paddedLevels = [];
-						for (let idx of activeLevelIndices) {
-							paddedLevels.push(idx < levels.length ? levels[idx] : '');
-						}
-						const steps = row.steps || [];
-						const paddedSteps = [];
-						for (let i = 0; i < maxSteps; i++) {
-							if (i < steps.length) {
-								paddedSteps.push({
-									step: steps[i].step || '',
-									expected: steps[i].expected || ''
-								});
-							} else {
-								paddedSteps.push({
-									step: '',
-									expected: ''
-								});
-							}
-						}
-
-						const truncatedTitle = truncate(row.title, 12);
-						const truncatedPrecond = truncate(row.precondition, 12);
-						const truncatedPriority = truncate(row.priority, 8);
-						const truncatedRemark = truncate(row.remark, 12);
-						const truncatedLevels = paddedLevels.map(lv => truncate(lv, 10));
-
-						bodyHtml += `<tr class="main-row" data-index="${index}" style="cursor:pointer;">`;
-						// 第一列：操作列（顺序：拖拽手柄、复选框、编辑、复制、删除）
-						bodyHtml += `<td style="text-align:center; width:${W.action}px; min-width:${W.action}px; max-width:${W.action}px; white-space:nowrap;">
-                    <span class="drag-handle-row" draggable="true" title="拖拽排序" style="cursor:grab;margin-right:2px;">☰</span>
-                    <input type="checkbox" class="row-checkbox" data-index="${index}" style="margin-right:4px;">
-                    <button class="btn-action edit" data-index="${index}" title="编辑" style="font-size:14px;">✎</button>
-                    <button class="btn-action copy" data-index="${index}" title="复制" style="font-size:14px;">📋</button>
-                    <button class="btn-action delete" data-index="${index}" title="删除" style="font-size:14px;">✕</button>
-                </td>`;
-						// 序号
-						bodyHtml +=
-							`<td class="row-index" style="width:${W.no}px; min-width:${W.no}px; max-width:${W.no}px;">${index + 1}</td>`;
-						// 阶层
-						truncatedLevels.forEach(lv => {
-							bodyHtml +=
-								`<td style="width:${W.level}px; min-width:${W.level}px; max-width:${W.level}px; text-align:center;">${escapeHtml(lv)}</td>`;
-						});
-						// 其他字段
-						bodyHtml +=
-							`
-                    <td style="width:${W.title}px; min-width:${W.title}px; max-width:${W.title}px;"><strong>${escapeHtml(truncatedTitle)}</strong></td>
-                    <td style="width:${W.precond}px; min-width:${W.precond}px; max-width:${W.precond}px; white-space:pre-wrap;">${escapeHtml(truncatedPrecond)}</td>
-                    <td style="width:${W.priority}px; min-width:${W.priority}px; max-width:${W.priority}px;"><span class="priority-badge" style="background:#eef3f9;padding:2px 10px;border-radius:12px;font-weight:600;font-size:13px;color:#1a2332;">${escapeHtml(truncatedPriority)}</span></td>
-                    <td style="width:${W.remark}px; min-width:${W.remark}px; max-width:${W.remark}px; white-space:pre-wrap;">${escapeHtml(truncatedRemark)}</td>`;
-						// 步骤
-						for (let i = 0; i < maxSteps; i++) {
-							const stepText = (i < steps.length) ? steps[i].step : '';
-							const expectedText = (i < steps.length) ? steps[i].expected : '';
-							bodyHtml +=
-								`<td style="width:${W.step}px; min-width:${W.step}px; max-width:${W.step}px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(stepText)}</td>
-                                 <td style="width:${W.step}px; min-width:${W.step}px; max-width:${W.step}px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(expectedText)}</td>`;
-						}
-						bodyHtml += `</tr>`;
-
-						// 详情行（合并所有列）
-						const totalCols = 1 + 1 + displayLevelCount + 4 + 2 * maxSteps; // 操作列 + No. + 阶层 + 四字段 + 步骤列
-						bodyHtml += `<tr class="detail-row" data-index="${index}" style="display:none;">`;
-						bodyHtml += `<td colspan="${totalCols}" style="padding: 12px 16px; background: #f7faff;">`;
-						bodyHtml += `<div class="detail-content">`;
-						const nonEmptyLevels = levels.filter(l => l && l.trim() !== '');
-						if (nonEmptyLevels.length > 0) {
-							bodyHtml +=
-								`<div class="detail-item"><span class="label">${fieldConfig.levelsSectionTitle.label}：</span><span class="value">${escapeHtml(nonEmptyLevels.join(' / '))}</span></div>`;
-						}
-						bodyHtml +=
-							`<div class="detail-item"><span class="label">${fieldConfig.title.label}：</span><span class="value">${escapeHtml(row.title)}</span></div>`;
-						bodyHtml +=
-							`<div class="detail-item"><span class="label">${fieldConfig.precondition.label}：</span><span class="value">${escapeHtml(row.precondition)}</span></div>`;
-						bodyHtml +=
-							`<div class="detail-item"><span class="label">${fieldConfig.priority.label}：</span><span class="value">${escapeHtml(row.priority)}</span></div>`;
-						bodyHtml +=
-							`<div class="detail-item"><span class="label">${fieldConfig.remark.label}：</span><span class="value">${escapeHtml(row.remark)}</span></div>`;
-						if (steps.length > 0) {
-							bodyHtml += `<div class="step-detail"><strong>步骤详情：</strong>`;
-							steps.forEach((s, i) => {
-								bodyHtml += `<div style="margin-top:6px;border-top:1px dashed #e2e9f2;padding-top:4px;">
-                            <div><strong>Step ${i+1}</strong></div>
-                            <div><span style="font-weight:500;">${getStepActionLabel()}：</span><span style="white-space:pre-wrap;">${escapeHtml(s.step)}</span></div>
-                            <div><span style="font-weight:500;">${getStepExpectedLabel()}：</span><span style="white-space:pre-wrap;">${escapeHtml(s.expected)}</span></div>
-                        </div>`;
-							});
-							bodyHtml += `</div>`;
-						} else {
-							bodyHtml +=
-								`<div class="detail-item"><span class="label">步骤：</span><span class="value">无</span></div>`;
-						}
-						bodyHtml += `</div></td></tr>`;
-					});
-					tableBody.innerHTML = bodyHtml;
-
-					// 行点击展开/收起
-					tableBody.querySelectorAll('.main-row').forEach(row => {
-						row.addEventListener('click', function(e) {
-							if (e.target.closest('.btn-action') || e.target.closest(
-								'input[type="checkbox"]')) return;
-							const index = this.dataset.index;
-							const detailRow = tableBody.querySelector(`.detail-row[data-index="${index}"]`);
-							if (detailRow) {
-								const isVisible = detailRow.style.display !== 'none';
-								detailRow.style.display = isVisible ? 'none' : '';
-							}
-						});
-					});
-
-					updateCheckAllState();
-				}
-
-				// ---------- 模态框（字段编辑） ----------
-				let currentEditTarget = null;
-
-				function openModal(targetKey) {
-					currentEditTarget = targetKey;
-					const config = fieldConfig[targetKey];
-					if (!config) return;
-					modalTitle.textContent = `编辑「${config.label}」`;
-					modalLabel.value = config.label;
-					if (config.showDefault !== false) {
-						modalDefaultGroup.style.display = 'block';
-						modalDefault.value = config.defaultValue || '';
-					} else {
-						modalDefaultGroup.style.display = 'none';
-					}
-					modalOverlay.classList.add('active');
-					modalLabel.focus();
-					modalLabel.select();
-				}
-
-				function closeModal() {
-					modalOverlay.classList.remove('active');
-					currentEditTarget = null;
-				}
-
-				function confirmModal() {
-					if (!currentEditTarget) return;
-					const target = currentEditTarget;
-					const newLabel = modalLabel.value.trim();
-					if (!newLabel) {
-						showToast('显示名称不能为空', 'error');
-						return;
-					}
-					const config = fieldConfig[target];
-					config.label = newLabel;
-					if (config.showDefault !== false) {
-						const newDefault = modalDefault.value.trim();
-						config.defaultValue = newDefault;
-					}
-					saveConfig();
-					applyFieldLabels();
-					renderLevels(getLevelValues());
-					renderSteps(getStepValues());
-					renderTable();
-					showToast(`已更新「${newLabel}」`, 'success');
-					closeModal();
 				}
 
 				// ---------- 初始化 ----------
@@ -3344,14 +3325,14 @@
 					clearAllCases.addEventListener('click', clearAllCasesHandler);
 
 					document.querySelectorAll('.input-group input, .input-group textarea, .input-group select').forEach(
-					el => {
-						el.addEventListener('keydown', function(e) {
-							if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
-								e.preventDefault();
-								addRow();
-							}
+						el => {
+							el.addEventListener('keydown', function(e) {
+								if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+									e.preventDefault();
+									addRow();
+								}
+							});
 						});
-					});
 
 					// ----- 表格事件委托（一次性） -----
 					tableBody.addEventListener('click', function(e) {
@@ -3444,12 +3425,61 @@
 						});
 				}
 
-				// 启动
+				// ---------- 模态框（字段编辑） ----------
+				let currentEditTarget = null;
+
+				function openModal(targetKey) {
+					currentEditTarget = targetKey;
+					const config = fieldConfig[targetKey];
+					if (!config) return;
+					modalTitle.textContent = `编辑「${config.label}」`;
+					modalLabel.value = config.label;
+					if (config.showDefault !== false) {
+						modalDefaultGroup.style.display = 'block';
+						modalDefault.value = config.defaultValue || '';
+					} else {
+						modalDefaultGroup.style.display = 'none';
+					}
+					modalOverlay.classList.add('active');
+					modalLabel.focus();
+					modalLabel.select();
+				}
+
+				function closeModal() {
+					modalOverlay.classList.remove('active');
+					currentEditTarget = null;
+				}
+
+				function confirmModal() {
+					if (!currentEditTarget) return;
+					const target = currentEditTarget;
+					const newLabel = modalLabel.value.trim();
+					if (!newLabel) {
+						showToast('显示名称不能为空', 'error');
+						return;
+					}
+					const config = fieldConfig[target];
+					config.label = newLabel;
+					if (config.showDefault !== false) {
+						const newDefault = modalDefault.value.trim();
+						config.defaultValue = newDefault;
+					}
+					saveConfig();
+					applyFieldLabels();
+					renderLevels(getLevelValues());
+					renderSteps(getStepValues());
+					renderTable();
+					showToast(`已更新「${newLabel}」`, 'success');
+					closeModal();
+				}
+
+				// ---------- 启动 ----------
 				if (document.readyState === 'loading') {
 					document.addEventListener('DOMContentLoaded', init);
 				} else {
 					init();
 				}
+
 			})();
 		</script>
 	</body>
