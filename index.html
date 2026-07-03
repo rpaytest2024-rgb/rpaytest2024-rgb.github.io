@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>TestCase-V1.2</title>
+		<title>TestCase-V1.5</title>
 		<!-- Firebase SDK -->
 		<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">
 		</script>
@@ -847,9 +847,11 @@
 			}
 
 			.table-footer {
-				margin-top: 18px;
+				margin-top: 12px;
+				/* 减少底部空白 */
 				display: flex;
 				justify-content: center;
+				padding-bottom: 0;
 			}
 
 			.table-scroll {
@@ -888,22 +890,42 @@
 				border: 1px solid #ffffff;
 			}
 
-			/* --- 操作列 – 取消固定，去掉边框和阴影 --- */
+			/* --- 操作列（最后一列）使用 sticky 固定右侧，默认透明 --- */
 			thead th:last-child,
 			tbody td:last-child {
 				width: 120px;
 				min-width: 120px;
 				max-width: 120px;
 				text-align: center;
-				background: transparent;
+				position: sticky !important;
+				right: 0 !important;
+				z-index: 10 !important;
+				background: inherit;
+				box-shadow: none;
+				border-left: none;
+				opacity: 0;
+				transition: opacity 0.2s ease;
+				pointer-events: none;
 			}
 
-			/* 表头操作列背景保持统一 */
+			/* 表头操作列（空标题）始终保持透明，不显示 */
 			thead th:last-child {
+				opacity: 0 !important;
+				pointer-events: none !important;
 				background: #f7faff;
 			}
 
-			/* 悬停时操作列背景跟随行 */
+			/* 行 hover 时显示操作列 */
+			tbody tr:hover td:last-child {
+				opacity: 1;
+				pointer-events: auto;
+			}
+
+			/* 操作列背景与行背景一致 */
+			tbody td:last-child {
+				background: #ffffff;
+			}
+
 			tbody tr:hover td:last-child {
 				background: #f8fbfe;
 			}
@@ -941,7 +963,8 @@
 			}
 
 			/* 数据行中的手顺/期待值允许换行 */
-			tbody td:not(:last-child):not(:nth-child(-n+2)) {
+			tbody td:not(:last-child):not(:nth-child(-n+3)) {
+				/* 前3列是拖动图标、选择框、No. */
 				white-space: normal;
 				word-break: break-word;
 			}
@@ -991,6 +1014,19 @@
 				justify-content: center;
 			}
 
+			/* 拖动图标（位于第一列）样式 */
+			.drag-handle-cell {
+				cursor: grab;
+				user-select: none;
+				text-align: center;
+				color: #b0bfd4;
+				font-size: 18px;
+			}
+
+			.drag-handle-cell:active {
+				cursor: grabbing;
+			}
+
 			.main-row {
 				cursor: pointer;
 			}
@@ -1006,22 +1042,23 @@
 				background: #d0ede0;
 			}
 
-			.drag-handle-row {
-				cursor: grab;
-				user-select: none;
+			/* ===== 详情行 – 正常显示内容 ===== */
+			.detail-row {
+				display: none !important;
 			}
 
-			.drag-handle-row:active {
-				cursor: grabbing;
+			.detail-row.detail-visible {
+				display: table-row !important;
 			}
 
-			/* ===== 详情行 – 全部居左对齐 ===== */
 			.detail-row td {
 				padding: 12px 16px;
 				background: #f7faff;
 				border-bottom: 1px solid #dce3ed;
 				text-align: left !important;
 				vertical-align: top;
+				opacity: 1 !important;
+				/* 确保不被操作列影响 */
 			}
 
 			.detail-row .detail-content {
@@ -1523,9 +1560,9 @@
 		<div class="app">
 			<!-- 头部 -->
 			<div class="header">
-				<h1>🧪 <span>TestCase-V1.2</span></h1>
+				<h1>🧪 <span>TestCase-V1.5</span></h1>
 				<p>测试用例生成器 · 截断优化 · 详情顺序调整 · Excel顶端对齐 · 实时同步</p>
-				<div class="version">版本 V1.2</div>
+				<div class="version">版本 V1.5</div>
 			</div>
 
 			<!-- 输入卡片 -->
@@ -1801,7 +1838,7 @@
 				let rows = [];
 
 				// ---------- 版本 ----------
-				const VERSION = 'V1.2';
+				const VERSION = 'V1.5';
 				console.log(`🧪 TestCase ${VERSION} 已启动`);
 
 				// ---------- DOM 引用 ----------
@@ -2419,7 +2456,7 @@
 					showToast('输入区域已重置', 'info');
 				}
 
-				// ---------- 表格渲染 ----------
+				// ---------- 表格渲染（核心） ----------
 				function renderTable() {
 					const hasData = rows.length > 0;
 					rowCount.textContent = rows.length;
@@ -2457,9 +2494,9 @@
 					const expectedLabel = getStepExpectedLabel();
 					const levelTitle = getLevelsTitle();
 
-					// 构建表头
+					// ===== 表头构建 =====
 					let headerHtml = `<thead><tr>`;
-					// 选择框列 35px，No列 50px（加宽，防止换行）
+					headerHtml += `<th rowspan="2" style="width:30px;min-width:30px;text-align:center;"></th>`;
 					headerHtml +=
 						`<th rowspan="2" style="width:35px;min-width:35px;text-align:center;"><input type="checkbox" id="checkAllHead"></th>`;
 					headerHtml +=
@@ -2476,7 +2513,7 @@
 						headerHtml +=
 							`<th colspan="2" class="group-header" style="text-align:center; min-width:360px; max-width:360px; width:360px;">${prefix} ${i}</th>`;
 					}
-					headerHtml += `<th rowspan="2" style="width:120px;min-width:120px;text-align:center;">操作</th>`;
+					headerHtml += `<th rowspan="2" style="width:120px;min-width:120px;text-align:center;"></th>`;
 					headerHtml += `</tr><tr>`;
 					if (displayLevelCount > 0) {
 						for (let i = 0; i < displayLevelCount; i++) {
@@ -2497,6 +2534,7 @@
 						return;
 					}
 
+					// ===== 构建数据行 =====
 					let bodyHtml = '';
 					rows.forEach((row, index) => {
 						const levels = row.levels || [];
@@ -2528,6 +2566,8 @@
 
 						bodyHtml += `<tr class="main-row" data-index="${index}" style="cursor:pointer;">`;
 						bodyHtml +=
+							`<td class="drag-handle-cell" draggable="true" title="拖拽排序">☰</td>`;
+						bodyHtml +=
 							`<td style="text-align:center;"><input type="checkbox" class="row-checkbox" data-index="${index}"></td>`;
 						bodyHtml += `<td class="row-index">${index + 1}</td>`;
 						truncatedLevels.forEach(lv => {
@@ -2547,67 +2587,53 @@
                             <td style="min-width:180px; max-width:180px; width:180px; white-space:normal; word-break:break-word;">${escapeHtml(expectedText)}</td>`;
 						}
 						bodyHtml += `
-                <td style="text-align:center;white-space:nowrap;width:120px;min-width:120px;max-width:120px;">
-                    <span class="drag-handle-row" draggable="true" title="拖拽排序" style="cursor:grab;margin-right:4px;">☰</span>
+                <td style="text-align:center;white-space:nowrap;">
                     <button class="btn-action copy" data-index="${index}" title="复制">📋</button>
                     <button class="btn-action edit" data-index="${index}" title="编辑">✎</button>
                     <button class="btn-action delete" data-index="${index}" title="删除">✕</button>
                 </td>
             </tr>`;
 
-						// 详情行
-						const totalCols = 2 + displayLevelCount + 4 + 2 * maxSteps + 1;
-						bodyHtml += `<tr class="detail-row" data-index="${index}" style="display:none;">`;
-						bodyHtml +=
-							`<td colspan="${totalCols}" style="padding: 12px 16px; background: #f7faff; text-align:left !important;">`;
-						bodyHtml += `<div class="detail-content" style="text-align:left !important;">`;
+						// ===== 详情行（正式内容） =====
+						const totalCols = 3 + displayLevelCount + 4 + 2 * maxSteps + 1;
+						bodyHtml += `<tr class="detail-row" data-index="${index}">`;
+						bodyHtml += `<td colspan="${totalCols}">`;
+						bodyHtml += `<div class="detail-content">`;
+						// 阶层（非空）
 						const nonEmptyLevels = levels.filter(l => l && l.trim() !== '');
 						if (nonEmptyLevels.length > 0) {
 							bodyHtml +=
-								`<div class="detail-item" style="text-align:left !important;"><span class="label" style="text-align:left !important;">${fieldConfig.levelsSectionTitle.label}：</span><span class="value" style="text-align:left !important;">${escapeHtml(nonEmptyLevels.join(' / '))}</span></div>`;
+								`<div class="detail-item"><span class="label">${fieldConfig.levelsSectionTitle.label}：</span><span class="value">${escapeHtml(nonEmptyLevels.join(' / '))}</span></div>`;
 						}
 						bodyHtml +=
-							`<div class="detail-item" style="text-align:left !important;"><span class="label" style="text-align:left !important;">${fieldConfig.title.label}：</span><span class="value" style="text-align:left !important;">${escapeHtml(row.title)}</span></div>`;
+							`<div class="detail-item"><span class="label">${fieldConfig.title.label}：</span><span class="value">${escapeHtml(row.title)}</span></div>`;
 						bodyHtml +=
-							`<div class="detail-item" style="text-align:left !important;"><span class="label" style="text-align:left !important;">${fieldConfig.precondition.label}：</span><span class="value" style="text-align:left !important;">${escapeHtml(row.precondition)}</span></div>`;
+							`<div class="detail-item"><span class="label">${fieldConfig.precondition.label}：</span><span class="value">${escapeHtml(row.precondition)}</span></div>`;
 						bodyHtml +=
-							`<div class="detail-item" style="text-align:left !important;"><span class="label" style="text-align:left !important;">${fieldConfig.priority.label}：</span><span class="value" style="text-align:left !important;">${escapeHtml(row.priority)}</span></div>`;
+							`<div class="detail-item"><span class="label">${fieldConfig.priority.label}：</span><span class="value">${escapeHtml(row.priority)}</span></div>`;
 						bodyHtml +=
-							`<div class="detail-item" style="text-align:left !important;"><span class="label" style="text-align:left !important;">${fieldConfig.remark.label}：</span><span class="value" style="text-align:left !important;">${escapeHtml(row.remark)}</span></div>`;
+							`<div class="detail-item"><span class="label">${fieldConfig.remark.label}：</span><span class="value">${escapeHtml(row.remark)}</span></div>`;
 						if (steps.length > 0) {
-							bodyHtml +=
-								`<div class="step-detail" style="text-align:left !important;"><strong>步骤详情：</strong>`;
+							bodyHtml += `<div class="step-detail"><strong>步骤详情：</strong>`;
 							steps.forEach((s, i) => {
-								bodyHtml += `<div style="margin-top:6px;border-top:1px dashed #e2e9f2;padding-top:4px;text-align:left !important;">
-                        <div style="text-align:left !important;"><strong>Step ${i+1}</strong></div>
-                        <div style="text-align:left !important;"><span style="font-weight:500;text-align:left !important;">${getStepActionLabel()}：</span><span style="white-space:pre-wrap;text-align:left !important;">${escapeHtml(s.step)}</span></div>
-                        <div style="text-align:left !important;"><span style="font-weight:500;text-align:left !important;">${getStepExpectedLabel()}：</span><span style="white-space:pre-wrap;text-align:left !important;">${escapeHtml(s.expected)}</span></div>
-                    </div>`;
+								bodyHtml += `<div>
+                                <div><strong>Step ${i+1}</strong></div>
+                                <div><span style="font-weight:500;">${getStepActionLabel()}：</span><span style="white-space:pre-wrap;">${escapeHtml(s.step)}</span></div>
+                                <div><span style="font-weight:500;">${getStepExpectedLabel()}：</span><span style="white-space:pre-wrap;">${escapeHtml(s.expected)}</span></div>
+                            </div>`;
 							});
 							bodyHtml += `</div>`;
 						} else {
 							bodyHtml +=
-								`<div class="detail-item" style="text-align:left !important;"><span class="label" style="text-align:left !important;">步骤：</span><span class="value" style="text-align:left !important;">无</span></div>`;
+								`<div class="detail-item"><span class="label">步骤：</span><span class="value">无</span></div>`;
 						}
 						bodyHtml += `</div></td></tr>`;
 					});
 					tableBody.innerHTML = bodyHtml;
 
-					// 行点击展开/收起
-					tableBody.querySelectorAll('.main-row').forEach(row => {
-						row.addEventListener('click', function(e) {
-							if (e.target.closest('.btn-action') || e.target.closest(
-									'input[type="checkbox"]')) return;
-							const index = this.dataset.index;
-							const detailRow = tableBody.querySelector(`.detail-row[data-index="${index}"]`);
-							if (detailRow) {
-								const isVisible = detailRow.style.display !== 'none';
-								detailRow.style.display = isVisible ? 'none' : '';
-							}
-						});
-					});
-
+					// 更新全选状态
 					updateCheckAllState();
+					console.log('✅ 表格已渲染，行数：', rows.length);
 				}
 
 				// ---------- 全选逻辑 ----------
@@ -3335,6 +3361,7 @@
 						});
 
 					// ----- 表格事件委托（一次性） -----
+					// 操作按钮点击（复制、编辑、删除）
 					tableBody.addEventListener('click', function(e) {
 						const btn = e.target.closest('.btn-action');
 						if (!btn) return;
@@ -3346,14 +3373,42 @@
 						else if (btn.classList.contains('copy')) copyRow(index);
 					});
 
-					// 拖拽排序（插入式）
-					tableBody.addEventListener('dragstart', function(e) {
+					// 行点击展开/收起（事件委托，使用类切换）
+					tableBody.addEventListener('click', function(e) {
 						const row = e.target.closest('tr.main-row');
-						if (!row) return;
-						if (!e.target.classList.contains('drag-handle-row')) {
-							e.preventDefault();
+						if (!row) {
+							console.log('点击未命中 .main-row');
 							return;
 						}
+						// 排除按钮、复选框、拖动图标
+						if (e.target.closest('.btn-action') || e.target.closest('input[type="checkbox"]') || e.target
+							.closest('.drag-handle-cell')) {
+							console.log('点击了交互元素，忽略');
+							return;
+						}
+						const index = row.dataset.index;
+						console.log(`点击主行 #${index}`);
+						const detailRow = tableBody.querySelector(`.detail-row[data-index="${index}"]`);
+						if (detailRow) {
+							const isVisible = detailRow.classList.contains('detail-visible');
+							if (isVisible) {
+								detailRow.classList.remove('detail-visible');
+								console.log(`隐藏详情行 #${index}`);
+							} else {
+								detailRow.classList.add('detail-visible');
+								console.log(`显示详情行 #${index}`);
+							}
+						} else {
+							console.warn(`未找到 detail-row[data-index="${index}"]`);
+						}
+					});
+
+					// 拖拽排序（使用第一列的拖动图标）
+					tableBody.addEventListener('dragstart', function(e) {
+						const cell = e.target.closest('.drag-handle-cell');
+						if (!cell) return;
+						const row = cell.closest('tr.main-row');
+						if (!row) return;
 						const index = row.dataset.index;
 						e.dataTransfer.setData('text/plain', index);
 						e.dataTransfer.effectAllowed = 'move';
